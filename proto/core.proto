@@ -1,0 +1,253 @@
+syntax = "proto3";
+option go_package = "github.com/nonhumantrades/flowdb-go/proto";
+
+package flowdb;
+
+import "google/protobuf/timestamp.proto";
+
+message Row {
+    google.protobuf.Timestamp timestamp = 1;
+    bytes data                          = 2;
+}
+
+enum CompressionMethod {
+    CompressionNone   = 0;
+    CompressionSnappy = 1;
+    CompressionLZ4    = 2;
+    CompressionZstd   = 3;
+}
+
+
+message Table {
+  string name                             = 1;
+  uint64 row_count                        = 2;
+  uint64 data_bytes                       = 3;
+  google.protobuf.Timestamp min_timestamp = 4;
+  google.protobuf.Timestamp max_timestamp = 5;
+  google.protobuf.Timestamp last_updated  = 6;
+  google.protobuf.Timestamp created_at    = 7;
+}
+message CreateTableRequest {
+    string name                   = 1;
+}
+
+message CreateTableResponse {
+    Table table = 1;
+}
+
+message DropTableRequest {
+    string name = 1;
+}
+
+message DropTableResponse {}
+
+message InsertRequest {
+    string table_name = 1;
+    string prefix     = 2;
+    repeated Row rows = 3;
+}
+
+message InsertResponse {
+    uint64 duration = 1;
+}
+
+message FilterOptions {
+    optional google.protobuf.Timestamp from = 1;
+    optional google.protobuf.Timestamp to   = 2;
+    optional int64 limit                    = 3; // -1 = no limit, 0 = default
+    optional bool reverse                   = 4;
+}
+
+message AggregationOptions {
+    optional uint64 time_bucket = 1;
+}
+
+message StreamOptions {
+  optional uint32 rows_per_chunk    = 1; // 0 = default rows per chunk count
+  optional uint32 target_bytes      = 2; // 0 = no bytes limit. If set, this overrides rows_per_chunk
+}
+
+message QueryRequest {
+  string table_name                               = 1;
+  string prefix                                   = 2;
+  FilterOptions filter_options                    = 3;
+  optional AggregationOptions aggregation_options = 4; 
+  optional StreamOptions stream_options           = 5;
+  bool head                                       = 6;
+  bool send_compressed                            = 7;
+}
+
+message StreamQueryHeader {
+  string table_name             = 1;
+  string prefix                 = 2;
+  CompressionMethod compression = 3; 
+}
+
+message StreamQueryBatch {
+    uint32 index      = 1;
+    repeated Row rows = 2;
+}
+
+message StreamQueryFooter {
+    uint64 duration             = 1;
+    uint64 count                = 2;
+    uint64 uncompressed_bytes   = 3;
+    uint64 compressed_bytes     = 4;
+    bool   truncated_by_limit   = 5;
+}
+
+message StreamQueryChunk {
+    oneof chunk {
+        StreamQueryHeader header = 1;
+        StreamQueryBatch  batch  = 2;
+        StreamQueryFooter footer = 3;
+    }
+}
+
+message QueryResponse {
+  string table_name             = 1;
+  string prefix                 = 2;
+  uint64 duration               = 3;
+  uint64 count                  = 4;
+  uint64 uncompressed_bytes     = 5; // logical payload bytes
+  uint64 compressed_bytes       = 6; // bytes actually sent
+  bool   truncated_by_limit     = 7;
+  CompressionMethod compression = 8; 
+  repeated Row rows             = 9;
+}
+
+message DeleteRequest {
+    string table_name = 1;
+    string prefix     = 2;
+    optional FilterOptions filter_options = 3;
+}
+
+message DeleteResponse {
+    uint64 duration = 1;
+}
+
+message GetTableRequest {
+    string table_name = 1;
+}
+
+message GetTableResponse {
+	Table table = 1;
+}
+
+message ListTablesResponse {
+    repeated Table tables = 1;
+}
+
+message BackupChunk {
+    bytes  data    = 1;
+	uint64 version = 2;
+}
+
+message BackupRequest {
+	uint64            version     = 1;
+	CompressionMethod compression = 2;
+}
+
+message S3Config {
+  string bucket     = 1;
+  string url        = 2;   
+  string access_key = 3;
+  string secret_key = 4;
+  string region     = 5;
+}
+
+message BytesProgress {
+  string type            = 1;
+  uint64 total_bytes     = 2;
+  uint64 completed_bytes = 3;
+  uint64 duration        = 4;
+}
+
+message S3BackupRequest {
+  S3Config s3_config   = 1;
+  bool     incremental = 2; 
+  string   full_key    = 3; 
+}
+
+message RestoreFromS3Request {
+  S3Config s3_config  = 1;
+  string   object_key = 2;  
+  bool     temp_file  = 3;
+}
+
+message S3BackupHeader {
+    string object_key = 1;  
+}
+
+message S3RestoreHeader {
+    repeated string objects = 1;
+}
+
+message S3BackupFooter {
+  string object_key = 1;  
+  uint64 version    = 2; 
+  uint64 size       = 3;  
+  uint64 duration   = 4;
+}
+
+message S3RestoreFooter {
+    uint64 size     = 1;  
+    uint64 duration = 2;
+}
+
+message S3BackupChunk {
+    oneof chunk {
+        S3BackupHeader header   = 1;
+        BytesProgress  progress = 2;
+        S3BackupFooter footer   = 3;
+    }
+}
+
+message S3RestoreChunk {
+    oneof chunk {
+        S3RestoreHeader header    = 1;
+        BytesProgress   progress  = 2;
+        S3RestoreFooter footer    = 3;
+    }
+}
+
+message DBStats {
+  google.protobuf.Timestamp started_at = 1;
+  uint64 uptime_seconds = 2;
+
+  uint64 bytes_written        = 3;  
+  uint64 bytes_deleted        = 4;  
+  uint64 datapoints_queried   = 5;  
+
+  uint64 create_table_requests       = 6;
+  uint64 drop_table_requests         = 7;
+  uint64 insert_requests             = 8;
+  uint64 delete_requests             = 9;
+  uint64 query_requests              = 10;
+  uint64 stream_query_requests       = 11;
+  uint64 get_table_requests          = 12;
+  uint64 list_tables_requests        = 13;
+  uint64 backup_requests             = 14;
+  uint64 backup_to_s3_requests       = 15;
+  uint64 restore_from_s3_requests    = 16;
+  uint64 total_requests              = 17;
+
+  uint64 on_disk_bytes               = 18;
+}
+
+message Empty {}
+
+service FlowDB {
+    rpc CreateTable(CreateTableRequest)       returns (CreateTableResponse);
+    rpc DropTable(DropTableRequest)           returns (DropTableResponse);
+    rpc Insert(InsertRequest)                 returns (InsertResponse);
+    rpc Delete(DeleteRequest)                 returns (DeleteResponse);
+    rpc Query(QueryRequest)                   returns (QueryResponse);
+    rpc StreamQuery(QueryRequest)             returns (stream StreamQueryChunk);
+    rpc GetTable(GetTableRequest)             returns (GetTableResponse);
+    rpc ListTables(Empty)                     returns (ListTablesResponse);
+    rpc Backup(BackupRequest)                 returns (stream BackupChunk);
+	rpc BackupToS3(S3BackupRequest)           returns (stream S3BackupChunk);
+    rpc RestoreFromS3(RestoreFromS3Request)   returns (stream S3RestoreChunk);
+	rpc GetStats(Empty)                       returns (DBStats);
+}
