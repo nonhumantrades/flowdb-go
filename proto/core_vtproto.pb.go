@@ -441,6 +441,7 @@ func (m *DeleteResponse) CloneVT() *DeleteResponse {
 	}
 	r := new(DeleteResponse)
 	r.Duration = m.Duration
+	r.DeletedRows = m.DeletedRows
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1426,6 +1427,9 @@ func (this *DeleteResponse) EqualVT(that *DeleteResponse) bool {
 		return false
 	}
 	if this.Duration != that.Duration {
+		return false
+	}
+	if this.DeletedRows != that.DeletedRows {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3729,6 +3733,11 @@ func (m *DeleteResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.DeletedRows != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DeletedRows))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.Duration != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Duration))
 		i--
@@ -5837,6 +5846,11 @@ func (m *DeleteResponse) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.DeletedRows != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.DeletedRows))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.Duration != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Duration))
 		i--
@@ -7291,6 +7305,9 @@ func (m *DeleteResponse) SizeVT() (n int) {
 	_ = l
 	if m.Duration != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Duration))
+	}
+	if m.DeletedRows != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.DeletedRows))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -10226,6 +10243,25 @@ func (m *DeleteResponse) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Duration |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeletedRows", wireType)
+			}
+			m.DeletedRows = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeletedRows |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -15098,6 +15134,25 @@ func (m *DeleteResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Duration |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeletedRows", wireType)
+			}
+			m.DeletedRows = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DeletedRows |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

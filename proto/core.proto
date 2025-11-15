@@ -124,6 +124,7 @@ message DeleteRequest {
 
 message DeleteResponse {
     uint64 duration = 1;
+	uint64 deleted_rows = 2;
 }
 
 message GetTableRequest {
