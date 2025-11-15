@@ -43,7 +43,7 @@ type DRPCFlowDBClient interface {
 	ListTables(ctx context.Context, in *Empty) (*ListTablesResponse, error)
 	Backup(ctx context.Context, in *BackupRequest) (DRPCFlowDB_BackupClient, error)
 	BackupToS3(ctx context.Context, in *S3BackupRequest) (DRPCFlowDB_BackupToS3Client, error)
-	RestoreFromS3(ctx context.Context, in *RestoreFromS3Request) (DRPCFlowDB_RestoreFromS3Client, error)
+	RestoreFromS3(ctx context.Context, in *S3RestoreRequest) (DRPCFlowDB_RestoreFromS3Client, error)
 	GetStats(ctx context.Context, in *Empty) (*DBStats, error)
 }
 
@@ -240,7 +240,7 @@ func (x *drpcFlowDB_BackupToS3Client) RecvMsg(m *S3BackupChunk) error {
 	return x.MsgRecv(m, drpcEncoding_File_core_proto{})
 }
 
-func (c *drpcFlowDBClient) RestoreFromS3(ctx context.Context, in *RestoreFromS3Request) (DRPCFlowDB_RestoreFromS3Client, error) {
+func (c *drpcFlowDBClient) RestoreFromS3(ctx context.Context, in *S3RestoreRequest) (DRPCFlowDB_RestoreFromS3Client, error) {
 	stream, err := c.cc.NewStream(ctx, "/flowdb.FlowDB/RestoreFromS3", drpcEncoding_File_core_proto{})
 	if err != nil {
 		return nil, err
@@ -300,7 +300,7 @@ type DRPCFlowDBServer interface {
 	ListTables(context.Context, *Empty) (*ListTablesResponse, error)
 	Backup(*BackupRequest, DRPCFlowDB_BackupStream) error
 	BackupToS3(*S3BackupRequest, DRPCFlowDB_BackupToS3Stream) error
-	RestoreFromS3(*RestoreFromS3Request, DRPCFlowDB_RestoreFromS3Stream) error
+	RestoreFromS3(*S3RestoreRequest, DRPCFlowDB_RestoreFromS3Stream) error
 	GetStats(context.Context, *Empty) (*DBStats, error)
 }
 
@@ -346,7 +346,7 @@ func (s *DRPCFlowDBUnimplementedServer) BackupToS3(*S3BackupRequest, DRPCFlowDB_
 	return drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
 }
 
-func (s *DRPCFlowDBUnimplementedServer) RestoreFromS3(*RestoreFromS3Request, DRPCFlowDB_RestoreFromS3Stream) error {
+func (s *DRPCFlowDBUnimplementedServer) RestoreFromS3(*S3RestoreRequest, DRPCFlowDB_RestoreFromS3Stream) error {
 	return drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
 }
 
@@ -455,7 +455,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
 					RestoreFromS3(
-						in1.(*RestoreFromS3Request),
+						in1.(*S3RestoreRequest),
 						&drpcFlowDB_RestoreFromS3Stream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.RestoreFromS3, true

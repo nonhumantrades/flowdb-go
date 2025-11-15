@@ -609,11 +609,11 @@ func (m *S3BackupRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *RestoreFromS3Request) CloneVT() *RestoreFromS3Request {
+func (m *S3RestoreRequest) CloneVT() *S3RestoreRequest {
 	if m == nil {
-		return (*RestoreFromS3Request)(nil)
+		return (*S3RestoreRequest)(nil)
 	}
-	r := new(RestoreFromS3Request)
+	r := new(S3RestoreRequest)
 	r.S3Config = m.S3Config.CloneVT()
 	r.ObjectKey = m.ObjectKey
 	r.TempFile = m.TempFile
@@ -624,7 +624,7 @@ func (m *RestoreFromS3Request) CloneVT() *RestoreFromS3Request {
 	return r
 }
 
-func (m *RestoreFromS3Request) CloneMessageVT() proto.Message {
+func (m *S3RestoreRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -1637,7 +1637,7 @@ func (this *S3BackupRequest) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *RestoreFromS3Request) EqualVT(that *RestoreFromS3Request) bool {
+func (this *S3RestoreRequest) EqualVT(that *S3RestoreRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1655,8 +1655,8 @@ func (this *RestoreFromS3Request) EqualVT(that *RestoreFromS3Request) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *RestoreFromS3Request) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*RestoreFromS3Request)
+func (this *S3RestoreRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*S3RestoreRequest)
 	if !ok {
 		return false
 	}
@@ -2068,7 +2068,7 @@ type FlowDBClient interface {
 	ListTables(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListTablesResponse, error)
 	Backup(ctx context.Context, in *BackupRequest, opts ...grpc.CallOption) (FlowDB_BackupClient, error)
 	BackupToS3(ctx context.Context, in *S3BackupRequest, opts ...grpc.CallOption) (FlowDB_BackupToS3Client, error)
-	RestoreFromS3(ctx context.Context, in *RestoreFromS3Request, opts ...grpc.CallOption) (FlowDB_RestoreFromS3Client, error)
+	RestoreFromS3(ctx context.Context, in *S3RestoreRequest, opts ...grpc.CallOption) (FlowDB_RestoreFromS3Client, error)
 	GetStats(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DBStats, error)
 }
 
@@ -2239,7 +2239,7 @@ func (x *flowDBBackupToS3Client) Recv() (*S3BackupChunk, error) {
 	return m, nil
 }
 
-func (c *flowDBClient) RestoreFromS3(ctx context.Context, in *RestoreFromS3Request, opts ...grpc.CallOption) (FlowDB_RestoreFromS3Client, error) {
+func (c *flowDBClient) RestoreFromS3(ctx context.Context, in *S3RestoreRequest, opts ...grpc.CallOption) (FlowDB_RestoreFromS3Client, error) {
 	stream, err := c.cc.NewStream(ctx, &FlowDB_ServiceDesc.Streams[3], "/flowdb.FlowDB/RestoreFromS3", opts...)
 	if err != nil {
 		return nil, err
@@ -2294,7 +2294,7 @@ type FlowDBServer interface {
 	ListTables(context.Context, *Empty) (*ListTablesResponse, error)
 	Backup(*BackupRequest, FlowDB_BackupServer) error
 	BackupToS3(*S3BackupRequest, FlowDB_BackupToS3Server) error
-	RestoreFromS3(*RestoreFromS3Request, FlowDB_RestoreFromS3Server) error
+	RestoreFromS3(*S3RestoreRequest, FlowDB_RestoreFromS3Server) error
 	GetStats(context.Context, *Empty) (*DBStats, error)
 	mustEmbedUnimplementedFlowDBServer()
 }
@@ -2333,7 +2333,7 @@ func (UnimplementedFlowDBServer) Backup(*BackupRequest, FlowDB_BackupServer) err
 func (UnimplementedFlowDBServer) BackupToS3(*S3BackupRequest, FlowDB_BackupToS3Server) error {
 	return status.Errorf(codes.Unimplemented, "method BackupToS3 not implemented")
 }
-func (UnimplementedFlowDBServer) RestoreFromS3(*RestoreFromS3Request, FlowDB_RestoreFromS3Server) error {
+func (UnimplementedFlowDBServer) RestoreFromS3(*S3RestoreRequest, FlowDB_RestoreFromS3Server) error {
 	return status.Errorf(codes.Unimplemented, "method RestoreFromS3 not implemented")
 }
 func (UnimplementedFlowDBServer) GetStats(context.Context, *Empty) (*DBStats, error) {
@@ -2542,7 +2542,7 @@ func (x *flowDBBackupToS3Server) Send(m *S3BackupChunk) error {
 }
 
 func _FlowDB_RestoreFromS3_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(RestoreFromS3Request)
+	m := new(S3RestoreRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -4136,7 +4136,7 @@ func (m *S3BackupRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RestoreFromS3Request) MarshalVT() (dAtA []byte, err error) {
+func (m *S3RestoreRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -4149,12 +4149,12 @@ func (m *RestoreFromS3Request) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RestoreFromS3Request) MarshalToVT(dAtA []byte) (int, error) {
+func (m *S3RestoreRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *RestoreFromS3Request) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *S3RestoreRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -6244,7 +6244,7 @@ func (m *S3BackupRequest) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *RestoreFromS3Request) MarshalVTStrict() (dAtA []byte, err error) {
+func (m *S3RestoreRequest) MarshalVTStrict() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -6257,12 +6257,12 @@ func (m *RestoreFromS3Request) MarshalVTStrict() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RestoreFromS3Request) MarshalToVTStrict(dAtA []byte) (int, error) {
+func (m *S3RestoreRequest) MarshalToVTStrict(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVTStrict(dAtA[:size])
 }
 
-func (m *RestoreFromS3Request) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
+func (m *S3RestoreRequest) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -7447,7 +7447,7 @@ func (m *S3BackupRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *RestoreFromS3Request) SizeVT() (n int) {
+func (m *S3RestoreRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -11190,7 +11190,7 @@ func (m *S3BackupRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RestoreFromS3Request) UnmarshalVT(dAtA []byte) error {
+func (m *S3RestoreRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11213,10 +11213,10 @@ func (m *RestoreFromS3Request) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RestoreFromS3Request: wiretype end group for non-group")
+			return fmt.Errorf("proto: S3RestoreRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RestoreFromS3Request: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: S3RestoreRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -16091,7 +16091,7 @@ func (m *S3BackupRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RestoreFromS3Request) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *S3RestoreRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -16114,10 +16114,10 @@ func (m *RestoreFromS3Request) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RestoreFromS3Request: wiretype end group for non-group")
+			return fmt.Errorf("proto: S3RestoreRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RestoreFromS3Request: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: S3RestoreRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

@@ -169,7 +169,7 @@ message S3BackupRequest {
   string   full_key    = 3; 
 }
 
-message RestoreFromS3Request {
+message S3RestoreRequest {
   S3Config s3_config  = 1;
   string   object_key = 2;  
   bool     temp_file  = 3;
@@ -248,6 +248,6 @@ service FlowDB {
     rpc ListTables(Empty)                     returns (ListTablesResponse);
     rpc Backup(BackupRequest)                 returns (stream BackupChunk);
 	rpc BackupToS3(S3BackupRequest)           returns (stream S3BackupChunk);
-    rpc RestoreFromS3(RestoreFromS3Request)   returns (stream S3RestoreChunk);
+    rpc RestoreFromS3(S3RestoreRequest)   returns (stream S3RestoreChunk);
 	rpc GetStats(Empty)                       returns (DBStats);
 }

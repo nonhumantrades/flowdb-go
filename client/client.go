@@ -520,7 +520,7 @@ func (c *Client) BackupToS3(ctx context.Context, p *BackupToS3Params) (*proto.S3
 }
 
 type RestoreFromS3Params struct {
-	req        *proto.RestoreFromS3Request
+	req        *proto.S3RestoreRequest
 	onHeader   func(*proto.S3RestoreHeader) error
 	onProgress func(*proto.BytesProgress) error
 }
@@ -532,7 +532,7 @@ func NewRestoreFromS3Params() *RestoreFromS3Params {
 	}
 }
 
-func (p *RestoreFromS3Params) WithRequest(r *proto.RestoreFromS3Request) *RestoreFromS3Params {
+func (p *RestoreFromS3Params) WithRequest(r *proto.S3RestoreRequest) *RestoreFromS3Params {
 	p.req = r
 	return p
 }
