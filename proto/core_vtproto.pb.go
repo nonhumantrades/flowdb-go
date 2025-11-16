@@ -261,7 +261,7 @@ func (m *QueryRequest) CloneVT() *QueryRequest {
 	r.AggregationOptions = m.AggregationOptions.CloneVT()
 	r.StreamOptions = m.StreamOptions.CloneVT()
 	r.Head = m.Head
-	r.SendCompressed = m.SendCompressed
+	r.Compression = m.Compression
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1130,7 +1130,7 @@ func (this *QueryRequest) EqualVT(that *QueryRequest) bool {
 	if this.Head != that.Head {
 		return false
 	}
-	if this.SendCompressed != that.SendCompressed {
+	if this.Compression != that.Compression {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3221,13 +3221,8 @@ func (m *QueryRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.SendCompressed {
-		i--
-		if m.SendCompressed {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
+	if m.Compression != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Compression))
 		i--
 		dAtA[i] = 0x38
 	}
@@ -5322,13 +5317,8 @@ func (m *QueryRequest) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.SendCompressed {
-		i--
-		if m.SendCompressed {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
+	if m.Compression != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Compression))
 		i--
 		dAtA[i] = 0x38
 	}
@@ -7112,8 +7102,8 @@ func (m *QueryRequest) SizeVT() (n int) {
 	if m.Head {
 		n += 2
 	}
-	if m.SendCompressed {
-		n += 2
+	if m.Compression != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Compression))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -9185,9 +9175,9 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 			m.Head = bool(v != 0)
 		case 7:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SendCompressed", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Compression", wireType)
 			}
-			var v int
+			m.Compression = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -9197,12 +9187,11 @@ func (m *QueryRequest) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.Compression |= CompressionMethod(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SendCompressed = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14052,9 +14041,9 @@ func (m *QueryRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.Head = bool(v != 0)
 		case 7:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SendCompressed", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Compression", wireType)
 			}
-			var v int
+			m.Compression = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -14064,12 +14053,11 @@ func (m *QueryRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.Compression |= CompressionMethod(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.SendCompressed = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

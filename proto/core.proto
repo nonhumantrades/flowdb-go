@@ -74,7 +74,7 @@ message QueryRequest {
   optional AggregationOptions aggregation_options = 4; 
   optional StreamOptions stream_options           = 5;
   bool head                                       = 6;
-  bool send_compressed                            = 7;
+  CompressionMethod compression                   = 7; 
 }
 
 message StreamQueryHeader {
