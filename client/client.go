@@ -1,5 +1,10 @@
 package client
 
+/*
+ * FlowDB Transport Client
+ *
+ */
+
 import (
 	"context"
 	"crypto/tls"

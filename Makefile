@@ -1,4 +1,7 @@
 proto:
 	cd proto && ./build.sh
 
-.PHONY: proto
+cli: 
+	@go run cmd/flowdb/main.go
+
+.PHONY: proto cli

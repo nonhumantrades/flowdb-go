@@ -3,6 +3,7 @@ module github.com/nonhumantrades/flowdb-go
 go 1.25.1
 
 require (
+	github.com/AR1011/slog v0.0.2
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/golang/snappy v1.0.0
 	github.com/klauspost/compress v1.18.1
@@ -14,6 +15,8 @@ require (
 )
 
 require (
+	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
