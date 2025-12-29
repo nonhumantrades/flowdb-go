@@ -36,6 +36,7 @@ type DRPCFlowDBClient interface {
 	CreateTable(ctx context.Context, in *CreateTableRequest) (*CreateTableResponse, error)
 	DropTable(ctx context.Context, in *DropTableRequest) (*DropTableResponse, error)
 	Insert(ctx context.Context, in *InsertRequest) (*InsertResponse, error)
+	BatchInsert(ctx context.Context, in *BatchInsertRequest) (*BatchInsertResponse, error)
 	Delete(ctx context.Context, in *DeleteRequest) (*DeleteResponse, error)
 	Query(ctx context.Context, in *QueryRequest) (*QueryResponse, error)
 	StreamQuery(ctx context.Context, in *QueryRequest) (DRPCFlowDB_StreamQueryClient, error)
@@ -78,6 +79,15 @@ func (c *drpcFlowDBClient) DropTable(ctx context.Context, in *DropTableRequest) 
 func (c *drpcFlowDBClient) Insert(ctx context.Context, in *InsertRequest) (*InsertResponse, error) {
 	out := new(InsertResponse)
 	err := c.cc.Invoke(ctx, "/flowdb.FlowDB/Insert", drpcEncoding_File_core_proto{}, in, out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *drpcFlowDBClient) BatchInsert(ctx context.Context, in *BatchInsertRequest) (*BatchInsertResponse, error) {
+	out := new(BatchInsertResponse)
+	err := c.cc.Invoke(ctx, "/flowdb.FlowDB/BatchInsert", drpcEncoding_File_core_proto{}, in, out)
 	if err != nil {
 		return nil, err
 	}
@@ -293,6 +303,7 @@ type DRPCFlowDBServer interface {
 	CreateTable(context.Context, *CreateTableRequest) (*CreateTableResponse, error)
 	DropTable(context.Context, *DropTableRequest) (*DropTableResponse, error)
 	Insert(context.Context, *InsertRequest) (*InsertResponse, error)
+	BatchInsert(context.Context, *BatchInsertRequest) (*BatchInsertResponse, error)
 	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	StreamQuery(*QueryRequest, DRPCFlowDB_StreamQueryStream) error
@@ -315,6 +326,10 @@ func (s *DRPCFlowDBUnimplementedServer) DropTable(context.Context, *DropTableReq
 }
 
 func (s *DRPCFlowDBUnimplementedServer) Insert(context.Context, *InsertRequest) (*InsertResponse, error) {
+	return nil, drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
+}
+
+func (s *DRPCFlowDBUnimplementedServer) BatchInsert(context.Context, *BatchInsertRequest) (*BatchInsertResponse, error) {
 	return nil, drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
 }
 
@@ -356,7 +371,7 @@ func (s *DRPCFlowDBUnimplementedServer) GetStats(context.Context, *Empty) (*DBSt
 
 type DRPCFlowDBDescription struct{}
 
-func (DRPCFlowDBDescription) NumMethods() int { return 12 }
+func (DRPCFlowDBDescription) NumMethods() int { return 13 }
 
 func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver, interface{}, bool) {
 	switch n {
@@ -388,6 +403,15 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 					)
 			}, DRPCFlowDBServer.Insert, true
 	case 3:
+		return "/flowdb.FlowDB/BatchInsert", drpcEncoding_File_core_proto{},
+			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
+				return srv.(DRPCFlowDBServer).
+					BatchInsert(
+						ctx,
+						in1.(*BatchInsertRequest),
+					)
+			}, DRPCFlowDBServer.BatchInsert, true
+	case 4:
 		return "/flowdb.FlowDB/Delete", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return srv.(DRPCFlowDBServer).
@@ -396,7 +420,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						in1.(*DeleteRequest),
 					)
 			}, DRPCFlowDBServer.Delete, true
-	case 4:
+	case 5:
 		return "/flowdb.FlowDB/Query", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return srv.(DRPCFlowDBServer).
@@ -405,7 +429,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						in1.(*QueryRequest),
 					)
 			}, DRPCFlowDBServer.Query, true
-	case 5:
+	case 6:
 		return "/flowdb.FlowDB/StreamQuery", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
@@ -414,7 +438,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						&drpcFlowDB_StreamQueryStream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.StreamQuery, true
-	case 6:
+	case 7:
 		return "/flowdb.FlowDB/GetTable", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return srv.(DRPCFlowDBServer).
@@ -423,7 +447,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						in1.(*GetTableRequest),
 					)
 			}, DRPCFlowDBServer.GetTable, true
-	case 7:
+	case 8:
 		return "/flowdb.FlowDB/ListTables", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return srv.(DRPCFlowDBServer).
@@ -432,7 +456,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						in1.(*Empty),
 					)
 			}, DRPCFlowDBServer.ListTables, true
-	case 8:
+	case 9:
 		return "/flowdb.FlowDB/Backup", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
@@ -441,7 +465,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						&drpcFlowDB_BackupStream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.Backup, true
-	case 9:
+	case 10:
 		return "/flowdb.FlowDB/BackupToS3", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
@@ -450,7 +474,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						&drpcFlowDB_BackupToS3Stream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.BackupToS3, true
-	case 10:
+	case 11:
 		return "/flowdb.FlowDB/RestoreFromS3", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
@@ -459,7 +483,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 						&drpcFlowDB_RestoreFromS3Stream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.RestoreFromS3, true
-	case 11:
+	case 12:
 		return "/flowdb.FlowDB/GetStats", drpcEncoding_File_core_proto{},
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return srv.(DRPCFlowDBServer).
@@ -519,6 +543,22 @@ type drpcFlowDB_InsertStream struct {
 }
 
 func (x *drpcFlowDB_InsertStream) SendAndClose(m *InsertResponse) error {
+	if err := x.MsgSend(m, drpcEncoding_File_core_proto{}); err != nil {
+		return err
+	}
+	return x.CloseSend()
+}
+
+type DRPCFlowDB_BatchInsertStream interface {
+	drpc.Stream
+	SendAndClose(*BatchInsertResponse) error
+}
+
+type drpcFlowDB_BatchInsertStream struct {
+	drpc.Stream
+}
+
+func (x *drpcFlowDB_BatchInsertStream) SendAndClose(m *BatchInsertResponse) error {
 	if err := x.MsgSend(m, drpcEncoding_File_core_proto{}); err != nil {
 		return err
 	}

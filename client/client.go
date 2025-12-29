@@ -262,6 +262,12 @@ func (c *Client) Insert(ctx context.Context, req *proto.InsertRequest) (*proto.I
 	})
 }
 
+func (c *Client) BatchInsert(ctx context.Context, req *proto.BatchInsertRequest) (*proto.BatchInsertResponse, error) {
+	return call(c, ctx, func(cli proto.DRPCFlowDBClient) (*proto.BatchInsertResponse, error) {
+		return cli.BatchInsert(ctx, req)
+	})
+}
+
 func (c *Client) Delete(ctx context.Context, req *proto.DeleteRequest) (*proto.DeleteResponse, error) {
 	return call(c, ctx, func(cli proto.DRPCFlowDBClient) (*proto.DeleteResponse, error) {
 		return cli.Delete(ctx, req)
