@@ -3,7 +3,7 @@
 ```bash
 go get github.com/nonhumantrades/flowdb-go@latest
 # with version:
-go get github.com/nonhumantrades/flowdb-go@v1.0.0
+go get github.com/nonhumantrades/flowdb-go@v1.1.2
 ```
 
 ## Install CLI
