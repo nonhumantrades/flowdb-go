@@ -43,8 +43,8 @@ type DRPCFlowDBClient interface {
 	GetTable(ctx context.Context, in *GetTableRequest) (*GetTableResponse, error)
 	ListTables(ctx context.Context, in *Empty) (*ListTablesResponse, error)
 	Backup(ctx context.Context, in *BackupRequest) (DRPCFlowDB_BackupClient, error)
-	BackupToS3(ctx context.Context, in *S3BackupRequest) (DRPCFlowDB_BackupToS3Client, error)
-	RestoreFromS3(ctx context.Context, in *S3RestoreRequest) (DRPCFlowDB_RestoreFromS3Client, error)
+	BackupToS3(ctx context.Context, in *BackupToS3Request) (DRPCFlowDB_BackupToS3Client, error)
+	RestoreFromS3(ctx context.Context, in *RestoreFromS3Request) (DRPCFlowDB_RestoreFromS3Client, error)
 	GetStats(ctx context.Context, in *Empty) (*DBStats, error)
 }
 
@@ -210,7 +210,7 @@ func (x *drpcFlowDB_BackupClient) RecvMsg(m *BackupChunk) error {
 	return x.MsgRecv(m, drpcEncoding_File_core_proto{})
 }
 
-func (c *drpcFlowDBClient) BackupToS3(ctx context.Context, in *S3BackupRequest) (DRPCFlowDB_BackupToS3Client, error) {
+func (c *drpcFlowDBClient) BackupToS3(ctx context.Context, in *BackupToS3Request) (DRPCFlowDB_BackupToS3Client, error) {
 	stream, err := c.cc.NewStream(ctx, "/flowdb.FlowDB/BackupToS3", drpcEncoding_File_core_proto{})
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ func (c *drpcFlowDBClient) BackupToS3(ctx context.Context, in *S3BackupRequest) 
 
 type DRPCFlowDB_BackupToS3Client interface {
 	drpc.Stream
-	Recv() (*S3BackupChunk, error)
+	Recv() (*BackupToS3Response, error)
 }
 
 type drpcFlowDB_BackupToS3Client struct {
@@ -238,19 +238,19 @@ func (x *drpcFlowDB_BackupToS3Client) GetStream() drpc.Stream {
 	return x.Stream
 }
 
-func (x *drpcFlowDB_BackupToS3Client) Recv() (*S3BackupChunk, error) {
-	m := new(S3BackupChunk)
+func (x *drpcFlowDB_BackupToS3Client) Recv() (*BackupToS3Response, error) {
+	m := new(BackupToS3Response)
 	if err := x.MsgRecv(m, drpcEncoding_File_core_proto{}); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (x *drpcFlowDB_BackupToS3Client) RecvMsg(m *S3BackupChunk) error {
+func (x *drpcFlowDB_BackupToS3Client) RecvMsg(m *BackupToS3Response) error {
 	return x.MsgRecv(m, drpcEncoding_File_core_proto{})
 }
 
-func (c *drpcFlowDBClient) RestoreFromS3(ctx context.Context, in *S3RestoreRequest) (DRPCFlowDB_RestoreFromS3Client, error) {
+func (c *drpcFlowDBClient) RestoreFromS3(ctx context.Context, in *RestoreFromS3Request) (DRPCFlowDB_RestoreFromS3Client, error) {
 	stream, err := c.cc.NewStream(ctx, "/flowdb.FlowDB/RestoreFromS3", drpcEncoding_File_core_proto{})
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (c *drpcFlowDBClient) RestoreFromS3(ctx context.Context, in *S3RestoreReque
 
 type DRPCFlowDB_RestoreFromS3Client interface {
 	drpc.Stream
-	Recv() (*S3RestoreChunk, error)
+	Recv() (*RestoreFromS3Response, error)
 }
 
 type drpcFlowDB_RestoreFromS3Client struct {
@@ -278,15 +278,15 @@ func (x *drpcFlowDB_RestoreFromS3Client) GetStream() drpc.Stream {
 	return x.Stream
 }
 
-func (x *drpcFlowDB_RestoreFromS3Client) Recv() (*S3RestoreChunk, error) {
-	m := new(S3RestoreChunk)
+func (x *drpcFlowDB_RestoreFromS3Client) Recv() (*RestoreFromS3Response, error) {
+	m := new(RestoreFromS3Response)
 	if err := x.MsgRecv(m, drpcEncoding_File_core_proto{}); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (x *drpcFlowDB_RestoreFromS3Client) RecvMsg(m *S3RestoreChunk) error {
+func (x *drpcFlowDB_RestoreFromS3Client) RecvMsg(m *RestoreFromS3Response) error {
 	return x.MsgRecv(m, drpcEncoding_File_core_proto{})
 }
 
@@ -310,8 +310,8 @@ type DRPCFlowDBServer interface {
 	GetTable(context.Context, *GetTableRequest) (*GetTableResponse, error)
 	ListTables(context.Context, *Empty) (*ListTablesResponse, error)
 	Backup(*BackupRequest, DRPCFlowDB_BackupStream) error
-	BackupToS3(*S3BackupRequest, DRPCFlowDB_BackupToS3Stream) error
-	RestoreFromS3(*S3RestoreRequest, DRPCFlowDB_RestoreFromS3Stream) error
+	BackupToS3(*BackupToS3Request, DRPCFlowDB_BackupToS3Stream) error
+	RestoreFromS3(*RestoreFromS3Request, DRPCFlowDB_RestoreFromS3Stream) error
 	GetStats(context.Context, *Empty) (*DBStats, error)
 }
 
@@ -357,11 +357,11 @@ func (s *DRPCFlowDBUnimplementedServer) Backup(*BackupRequest, DRPCFlowDB_Backup
 	return drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
 }
 
-func (s *DRPCFlowDBUnimplementedServer) BackupToS3(*S3BackupRequest, DRPCFlowDB_BackupToS3Stream) error {
+func (s *DRPCFlowDBUnimplementedServer) BackupToS3(*BackupToS3Request, DRPCFlowDB_BackupToS3Stream) error {
 	return drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
 }
 
-func (s *DRPCFlowDBUnimplementedServer) RestoreFromS3(*S3RestoreRequest, DRPCFlowDB_RestoreFromS3Stream) error {
+func (s *DRPCFlowDBUnimplementedServer) RestoreFromS3(*RestoreFromS3Request, DRPCFlowDB_RestoreFromS3Stream) error {
 	return drpcerr.WithCode(errors.New("Unimplemented"), drpcerr.Unimplemented)
 }
 
@@ -470,7 +470,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
 					BackupToS3(
-						in1.(*S3BackupRequest),
+						in1.(*BackupToS3Request),
 						&drpcFlowDB_BackupToS3Stream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.BackupToS3, true
@@ -479,7 +479,7 @@ func (DRPCFlowDBDescription) Method(n int) (string, drpc.Encoding, drpc.Receiver
 			func(srv interface{}, ctx context.Context, in1, in2 interface{}) (drpc.Message, error) {
 				return nil, srv.(DRPCFlowDBServer).
 					RestoreFromS3(
-						in1.(*S3RestoreRequest),
+						in1.(*RestoreFromS3Request),
 						&drpcFlowDB_RestoreFromS3Stream{in2.(drpc.Stream)},
 					)
 			}, DRPCFlowDBServer.RestoreFromS3, true
@@ -657,27 +657,27 @@ func (x *drpcFlowDB_BackupStream) Send(m *BackupChunk) error {
 
 type DRPCFlowDB_BackupToS3Stream interface {
 	drpc.Stream
-	Send(*S3BackupChunk) error
+	Send(*BackupToS3Response) error
 }
 
 type drpcFlowDB_BackupToS3Stream struct {
 	drpc.Stream
 }
 
-func (x *drpcFlowDB_BackupToS3Stream) Send(m *S3BackupChunk) error {
+func (x *drpcFlowDB_BackupToS3Stream) Send(m *BackupToS3Response) error {
 	return x.MsgSend(m, drpcEncoding_File_core_proto{})
 }
 
 type DRPCFlowDB_RestoreFromS3Stream interface {
 	drpc.Stream
-	Send(*S3RestoreChunk) error
+	Send(*RestoreFromS3Response) error
 }
 
 type drpcFlowDB_RestoreFromS3Stream struct {
 	drpc.Stream
 }
 
-func (x *drpcFlowDB_RestoreFromS3Stream) Send(m *S3RestoreChunk) error {
+func (x *drpcFlowDB_RestoreFromS3Stream) Send(m *RestoreFromS3Response) error {
 	return x.MsgSend(m, drpcEncoding_File_core_proto{})
 }
 
