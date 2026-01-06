@@ -439,34 +439,34 @@ func (c *Client) Backup(ctx context.Context, version uint64, comp proto.Compress
 }
 
 type BackupToS3Params struct {
-	req        *proto.S3BackupRequest
-	onHeader   func(*proto.S3BackupHeader) error
-	onProgress func(*proto.BytesProgress) error
+	req        *proto.BackupToS3Request
+	onHeader   func(*proto.BackupStarted) error
+	onProgress func(*proto.BackupProgress) error
 }
 
 func NewBackupToS3Params() *BackupToS3Params {
 	return &BackupToS3Params{
-		onHeader:   func(*proto.S3BackupHeader) error { return nil },
-		onProgress: func(*proto.BytesProgress) error { return nil },
+		onHeader:   func(*proto.BackupStarted) error { return nil },
+		onProgress: func(*proto.BackupProgress) error { return nil },
 	}
 }
 
-func (p *BackupToS3Params) WithRequest(r *proto.S3BackupRequest) *BackupToS3Params {
+func (p *BackupToS3Params) WithRequest(r *proto.BackupToS3Request) *BackupToS3Params {
 	p.req = r
 	return p
 }
 
-func (p *BackupToS3Params) WithOnHeader(f func(*proto.S3BackupHeader) error) *BackupToS3Params {
+func (p *BackupToS3Params) WithOnHeader(f func(*proto.BackupStarted) error) *BackupToS3Params {
 	p.onHeader = f
 	return p
 }
 
-func (p *BackupToS3Params) WithOnProgress(f func(*proto.BytesProgress) error) *BackupToS3Params {
+func (p *BackupToS3Params) WithOnProgress(f func(*proto.BackupProgress) error) *BackupToS3Params {
 	p.onProgress = f
 	return p
 }
 
-func (c *Client) BackupToS3(ctx context.Context, p *BackupToS3Params) (*proto.S3BackupFooter, error) {
+func (c *Client) BackupToS3(ctx context.Context, p *BackupToS3Params) (*proto.BackupCompleted, error) {
 	if p == nil || p.req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -474,7 +474,7 @@ func (c *Client) BackupToS3(ctx context.Context, p *BackupToS3Params) (*proto.S3
 	var (
 		stream proto.DRPCFlowDB_BackupToS3Client
 		conn   *conn
-		ft     *proto.S3BackupFooter
+		ft     *proto.BackupCompleted
 	)
 
 	var dialErr error
@@ -515,50 +515,50 @@ func (c *Client) BackupToS3(ctx context.Context, p *BackupToS3Params) (*proto.S3
 			return nil, err
 		}
 
-		switch t := chunk.Chunk.(type) {
-		case *proto.S3BackupChunk_Header:
-			if err = p.onHeader(t.Header); err != nil {
+		switch t := chunk.Message.(type) {
+		case *proto.BackupToS3Response_Started:
+			if err = p.onHeader(t.Started); err != nil {
 				return nil, err
 			}
-		case *proto.S3BackupChunk_Progress:
+		case *proto.BackupToS3Response_Progress:
 			if err = p.onProgress(t.Progress); err != nil {
 				return nil, err
 			}
-		case *proto.S3BackupChunk_Footer:
-			ft = t.Footer
+		case *proto.BackupToS3Response_Completed:
+			ft = t.Completed
 		}
 	}
 }
 
 type RestoreFromS3Params struct {
-	req        *proto.S3RestoreRequest
-	onHeader   func(*proto.S3RestoreHeader) error
-	onProgress func(*proto.BytesProgress) error
+	req        *proto.RestoreFromS3Request
+	onHeader   func(*proto.RestoreStarted) error
+	onProgress func(*proto.RestoreProgress) error
 }
 
 func NewRestoreFromS3Params() *RestoreFromS3Params {
 	return &RestoreFromS3Params{
-		onHeader:   func(*proto.S3RestoreHeader) error { return nil },
-		onProgress: func(*proto.BytesProgress) error { return nil },
+		onHeader:   func(*proto.RestoreStarted) error { return nil },
+		onProgress: func(*proto.RestoreProgress) error { return nil },
 	}
 }
 
-func (p *RestoreFromS3Params) WithRequest(r *proto.S3RestoreRequest) *RestoreFromS3Params {
+func (p *RestoreFromS3Params) WithRequest(r *proto.RestoreFromS3Request) *RestoreFromS3Params {
 	p.req = r
 	return p
 }
 
-func (p *RestoreFromS3Params) WithOnHeader(f func(*proto.S3RestoreHeader) error) *RestoreFromS3Params {
+func (p *RestoreFromS3Params) WithOnHeader(f func(*proto.RestoreStarted) error) *RestoreFromS3Params {
 	p.onHeader = f
 	return p
 }
 
-func (p *RestoreFromS3Params) WithOnProgress(f func(*proto.BytesProgress) error) *RestoreFromS3Params {
+func (p *RestoreFromS3Params) WithOnProgress(f func(*proto.RestoreProgress) error) *RestoreFromS3Params {
 	p.onProgress = f
 	return p
 }
 
-func (c *Client) RestoreFromS3(ctx context.Context, p *RestoreFromS3Params) (*proto.S3RestoreFooter, error) {
+func (c *Client) RestoreFromS3(ctx context.Context, p *RestoreFromS3Params) (*proto.RestoreCompleted, error) {
 	if p == nil || p.req == nil {
 		return nil, errors.New("request is required")
 	}
@@ -566,7 +566,7 @@ func (c *Client) RestoreFromS3(ctx context.Context, p *RestoreFromS3Params) (*pr
 	var (
 		stream proto.DRPCFlowDB_RestoreFromS3Client
 		conn   *conn
-		ft     *proto.S3RestoreFooter
+		ft     *proto.RestoreCompleted
 	)
 
 	var dialErr error
@@ -607,17 +607,17 @@ func (c *Client) RestoreFromS3(ctx context.Context, p *RestoreFromS3Params) (*pr
 			return nil, err
 		}
 
-		switch t := chunk.Chunk.(type) {
-		case *proto.S3RestoreChunk_Header:
-			if err = p.onHeader(t.Header); err != nil {
+		switch t := chunk.Message.(type) {
+		case *proto.RestoreFromS3Response_Started:
+			if err = p.onHeader(t.Started); err != nil {
 				return nil, err
 			}
-		case *proto.S3RestoreChunk_Progress:
+		case *proto.RestoreFromS3Response_Progress:
 			if err = p.onProgress(t.Progress); err != nil {
 				return nil, err
 			}
-		case *proto.S3RestoreChunk_Footer:
-			ft = t.Footer
+		case *proto.RestoreFromS3Response_Completed:
+			ft = t.Completed
 		}
 	}
 }
