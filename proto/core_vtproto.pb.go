@@ -281,6 +281,10 @@ func (m *AggregationOptions) CloneVT() *AggregationOptions {
 		tmpVal := *rhs
 		r.TimeBucket = &tmpVal
 	}
+	if rhs := m.Unit; rhs != nil {
+		tmpVal := *rhs
+		r.Unit = &tmpVal
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1233,6 +1237,9 @@ func (this *AggregationOptions) EqualVT(that *AggregationOptions) bool {
 		return false
 	}
 	if p, q := this.TimeBucket, that.TimeBucket; (p == nil && q != nil) || (p != nil && (q == nil || *p != *q)) {
+		return false
+	}
+	if p, q := this.Unit, that.Unit; (p == nil && q != nil) || (p != nil && (q == nil || *p != *q)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3487,6 +3494,11 @@ func (m *AggregationOptions) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Unit != nil {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(*m.Unit))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.TimeBucket != nil {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(*m.TimeBucket))
 		i--
@@ -5737,6 +5749,11 @@ func (m *AggregationOptions) MarshalToSizedBufferVTStrict(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Unit != nil {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(*m.Unit))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.TimeBucket != nil {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(*m.TimeBucket))
 		i--
@@ -7616,6 +7633,9 @@ func (m *AggregationOptions) SizeVT() (n int) {
 	_ = l
 	if m.TimeBucket != nil {
 		n += 1 + protohelpers.SizeOfVarint(uint64(*m.TimeBucket))
+	}
+	if m.Unit != nil {
+		n += 1 + protohelpers.SizeOfVarint(uint64(*m.Unit))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -9729,6 +9749,26 @@ func (m *AggregationOptions) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.TimeBucket = &v
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Unit", wireType)
+			}
+			var v TimeframeUnit
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= TimeframeUnit(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Unit = &v
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -14937,6 +14977,26 @@ func (m *AggregationOptions) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.TimeBucket = &v
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Unit", wireType)
+			}
+			var v TimeframeUnit
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= TimeframeUnit(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Unit = &v
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

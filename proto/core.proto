@@ -17,6 +17,15 @@ enum CompressionMethod {
     CompressionZstd   = 3;
 }
 
+enum TimeframeUnit {
+  UNIT_SECOND = 0;  
+  UNIT_MINUTE = 1;  
+  UNIT_HOUR   = 2;    
+  UNIT_DAY    = 3;     
+  UNIT_WEEK   = 4;    
+  UNIT_MONTH  = 5;   
+  UNIT_YEAR   = 6;    
+}
 
 message Table {
   string name                             = 1;
@@ -74,7 +83,8 @@ message FilterOptions {
 }
 
 message AggregationOptions {
-    optional uint64 time_bucket = 1;
+    optional uint64 time_bucket = 1;  // For duration: nanoseconds. For calendar: multiplier (1, 2, 3...)
+    optional TimeframeUnit unit = 2;  // Defaults to UNIT_SECOND for backward compatibility
 }
 
 message StreamOptions {
