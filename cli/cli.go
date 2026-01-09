@@ -11,7 +11,9 @@ import (
 
 	"github.com/AR1011/slog"
 	"github.com/nonhumantrades/flowdb-go/client"
+	"github.com/nonhumantrades/flowdb-go/proto"
 	"github.com/nonhumantrades/flowdb-go/types"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const defaultServerAddr = "localhost:7777"
@@ -333,6 +335,53 @@ func (c *Cli) handleStats(cmd *Stats) {
 	fmt.Printf("  Backup to S3:      %s\n", formatNumber(stats.BackupToS3Requests))
 	fmt.Printf("  Restore from S3:   %s\n", formatNumber(stats.RestoreFromS3Requests))
 }
+
+func (c *Cli) buildQueryRequest(table, prefix, from, to string, limit int, isHead bool) (*proto.QueryRequest, error) {
+	if table == "" && prefix == "" {
+		return nil, fmt.Errorf("either table= or prefix= is required")
+	}
+
+	var fromTime, toTime time.Time
+	var err error
+
+	if from == "" && to == "" {
+		// Default to last hour
+		toTime = time.Now().UTC()
+		fromTime = toTime.Add(-time.Hour)
+	} else {
+		fromTime, err = parseTime(from)
+		if err != nil {
+			return nil, fmt.Errorf("invalid from time: %w", err)
+		}
+		toTime, err = parseTime(to)
+		if err != nil {
+			return nil, fmt.Errorf("invalid to time: %w", err)
+		}
+	}
+
+	if limit <= 0 {
+		limit = 100
+	}
+
+	req := &proto.QueryRequest{
+		TableName: table,
+		Prefix:    prefix,
+		Head:      isHead,
+		FilterOptions: &proto.FilterOptions{
+			Limit: client.Int64(int64(limit)),
+		},
+	}
+
+	if !fromTime.IsZero() {
+		req.FilterOptions.From = timestamppb.New(fromTime)
+	}
+	if !toTime.IsZero() {
+		req.FilterOptions.To = timestamppb.New(toTime)
+	}
+
+	return req, nil
+}
+
 func (c *Cli) handleHead(cmd *Head)   { fmt.Printf("head: %+v\n", *cmd) }
 func (c *Cli) handleQuery(cmd *Query) { fmt.Printf("query: %+v\n", *cmd) }
 func (c *Cli) handleDelete(cmd *Delete) {
