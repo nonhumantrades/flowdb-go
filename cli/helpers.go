@@ -243,3 +243,55 @@ func printProgressBar(current, total uint64, suffix string) {
 func clearProgressBar() {
 	fmt.Print("\r" + strings.Repeat(" ", 80) + "\r")
 }
+
+// pickS3Profile returns the S3 profile by name, or prompts user to select one interactively.
+// Returns nil and prints error if no profiles exist or selection fails.
+func (c *Cli) pickS3Profile(name string) *S3Profile {
+	if len(c.state.S3Profiles) == 0 {
+		fmt.Println("no S3 profiles configured (use 's3 add' to create one)")
+		return nil
+	}
+
+	if name != "" {
+		idx := c.findS3ProfileIndex(name)
+		if idx < 0 {
+			fmt.Printf("S3 profile '%s' not found\n", name)
+			return nil
+		}
+		return &c.state.S3Profiles[idx]
+	}
+
+	// Interactive selection
+	fmt.Println("S3 profiles:")
+	for i, p := range c.state.S3Profiles {
+		fmt.Printf("  %d) %s (bucket=%s, url=%s)\n", i+1, p.Name, p.Creds.Bucket, p.Creds.Url)
+	}
+
+	input, err := c.readLine("Select profile (number or name): ")
+	if err != nil {
+		fmt.Printf("aborted: %v\n", err)
+		return nil
+	}
+	input = strings.TrimSpace(input)
+	if input == "" {
+		fmt.Println("cancelled")
+		return nil
+	}
+
+	// Try number first
+	if n, err := strconv.Atoi(input); err == nil {
+		if n < 1 || n > len(c.state.S3Profiles) {
+			fmt.Println("invalid selection")
+			return nil
+		}
+		return &c.state.S3Profiles[n-1]
+	}
+
+	// Try name
+	idx := c.findS3ProfileIndex(input)
+	if idx < 0 {
+		fmt.Printf("S3 profile '%s' not found\n", input)
+		return nil
+	}
+	return &c.state.S3Profiles[idx]
+}
