@@ -619,7 +619,85 @@ func (c *Cli) handleBackup(cmd *S3Backup) {
 	fmt.Printf("  Duration:   %s\n", formatDuration(time.Duration(completed.DurationMs)*time.Millisecond))
 	fmt.Printf("  Checksum:   %s\n", completed.Checksum)
 }
-func (c *Cli) handleRestore(cmd *S3Restore) { fmt.Printf("restore: %+v\n", *cmd) }
+func (c *Cli) handleRestore(cmd *S3Restore) {
+	if !c.requireClient() {
+		return
+	}
+
+	if cmd.Key == "" {
+		fmt.Println("error: key= is required (the S3 object key to restore from)")
+		return
+	}
+
+	profile := c.pickS3Profile(cmd.Profile)
+	if profile == nil {
+		return
+	}
+
+	// Confirmation
+	fmt.Println("Restore from S3:")
+	fmt.Printf("  Profile: %s\n", profile.Name)
+	fmt.Printf("  Bucket:  %s\n", profile.Creds.Bucket)
+	fmt.Printf("  Key:     %s\n", cmd.Key)
+	fmt.Println()
+
+	confirm, err := c.readLine("This will restore the database from this backup. Proceed? [y/N]: ")
+	if err != nil {
+		fmt.Printf("aborted: %v\n", err)
+		return
+	}
+	confirm = strings.ToLower(strings.TrimSpace(confirm))
+	if confirm != "y" && confirm != "yes" {
+		fmt.Println("cancelled")
+		return
+	}
+
+	req := &proto.RestoreFromS3Request{
+		S3Config: &proto.S3Config{
+			Bucket:    profile.Creds.Bucket,
+			Url:       profile.Creds.Url,
+			AccessKey: profile.Creds.AccessKey,
+			SecretKey: profile.Creds.SecretKey,
+			Region:    profile.Creds.Region,
+		},
+		ObjectKey: cmd.Key,
+	}
+
+	fmt.Println("Starting restore...")
+
+	params := client.NewRestoreFromS3Params().
+		WithRequest(req).
+		WithOnHeader(func(h *proto.RestoreStarted) error {
+			if h.IsIncremental {
+				fmt.Printf("Type: incremental backup (base: %s)\n\n", h.FullBackupKey)
+			} else {
+				fmt.Println("Type: full backup")
+				fmt.Println()
+			}
+			return nil
+		}).
+		WithOnProgress(func(p *proto.RestoreProgress) error {
+			printProgressBar(p.BytesDownloaded, p.TotalBytes, p.Phase)
+			return nil
+		})
+
+	completed, err := c.client.RestoreFromS3(c.ctx, params)
+	clearProgressBar()
+
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	fmt.Println("Restore complete!")
+	fmt.Printf("  Duration: %s\n", formatDuration(time.Duration(completed.DurationMs)*time.Millisecond))
+	if len(completed.TablesRestored) > 0 {
+		fmt.Println("  Tables restored:")
+		for _, t := range completed.TablesRestored {
+			fmt.Printf("    - %s\n", t)
+		}
+	}
+}
 
 func (c *Cli) handleHelp() {
 	fmt.Println("FlowDB CLI")
