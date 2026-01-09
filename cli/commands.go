@@ -45,8 +45,16 @@ type Delete struct {
 }
 
 // backup + restore
-type S3Backup struct{}
-type S3Restore struct{}
+type S3Backup struct {
+	Profile string `cli:"profile"`
+	Type    string `cli:"type"`
+	FullKey string `cli:"full_key"`
+}
+
+type S3Restore struct {
+	Profile string `cli:"profile"`
+	Key     string `cli:"key"`
+}
 
 // db stats
 type Stats struct{}
