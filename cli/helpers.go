@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var relativeTimeRegex = regexp.MustCompile(`^-(\d+)([smhdw])$`)
@@ -132,4 +134,83 @@ func parseTime(s string) (time.Time, error) {
 	}
 
 	return time.Time{}, fmt.Errorf("invalid time format: %q (use unix timestamp, ISO 8601, or relative like -1h, -7d, now)", s)
+}
+
+func formatBytes(b uint64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+		TB = GB * 1024
+	)
+	switch {
+	case b >= TB:
+		return fmt.Sprintf("%.1f TB", float64(b)/TB)
+	case b >= GB:
+		return fmt.Sprintf("%.1f GB", float64(b)/GB)
+	case b >= MB:
+		return fmt.Sprintf("%.1f MB", float64(b)/MB)
+	case b >= KB:
+		return fmt.Sprintf("%.1f KB", float64(b)/KB)
+	default:
+		return fmt.Sprintf("%d B", b)
+	}
+}
+
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return fmt.Sprintf("%ds", int(d.Seconds()))
+	}
+	if d < time.Hour {
+		m := int(d.Minutes())
+		s := int(d.Seconds()) % 60
+		if s == 0 {
+			return fmt.Sprintf("%dm", m)
+		}
+		return fmt.Sprintf("%dm %ds", m, s)
+	}
+	if d < 24*time.Hour {
+		h := int(d.Hours())
+		m := int(d.Minutes()) % 60
+		if m == 0 {
+			return fmt.Sprintf("%dh", h)
+		}
+		return fmt.Sprintf("%dh %dm", h, m)
+	}
+	days := int(d.Hours()) / 24
+	h := int(d.Hours()) % 24
+	if h == 0 {
+		return fmt.Sprintf("%dd", days)
+	}
+	return fmt.Sprintf("%dd %dh", days, h)
+}
+
+func formatTimestamp(ts *timestamppb.Timestamp) string {
+	if ts == nil {
+		return "-"
+	}
+	return ts.AsTime().UTC().Format("2006-01-02 15:04:05 UTC")
+}
+
+func formatTimestampShort(ts *timestamppb.Timestamp) string {
+	if ts == nil {
+		return "-"
+	}
+	return ts.AsTime().UTC().Format("2006-01-02 15:04:05")
+}
+
+func formatNumber(n uint64) string {
+	s := strconv.FormatUint(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+
+	var result []byte
+	for i, c := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, byte(c))
+	}
+	return string(result)
 }
