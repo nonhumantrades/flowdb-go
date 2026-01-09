@@ -238,7 +238,33 @@ func (c *Cli) Loop() {
 }
 
 func (c *Cli) handleTableInfo(cmd *TableInfo)   { fmt.Println("table info:", cmd.Name) }
-func (c *Cli) handleListTables(cmd *ListTables) { fmt.Println("list tables") }
+func (c *Cli) handleListTables(cmd *ListTables) {
+	if !c.requireClient() {
+		return
+	}
+
+	tables, err := c.client.ListTables(c.ctx)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	if len(tables) == 0 {
+		fmt.Println("no tables found")
+		return
+	}
+
+	fmt.Printf("%-24s %12s %10s   %-19s   %-19s\n", "NAME", "ROWS", "SIZE", "MIN TIME", "MAX TIME")
+	for _, t := range tables {
+		fmt.Printf("%-24s %12s %10s   %-19s   %-19s\n",
+			t.Name,
+			formatNumber(t.RowCount),
+			formatBytes(t.DataBytes),
+			formatTimestampShort(t.MinTimestamp),
+			formatTimestampShort(t.MaxTimestamp),
+		)
+	}
+}
 
 func (c *Cli) handleStats(cmd *Stats) { fmt.Printf("stats: %+v\n", *cmd) }
 func (c *Cli) handleHead(cmd *Head)   { fmt.Printf("head: %+v\n", *cmd) }
