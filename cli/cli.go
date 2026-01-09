@@ -237,7 +237,35 @@ func (c *Cli) Loop() {
 	}
 }
 
-func (c *Cli) handleTableInfo(cmd *TableInfo)   { fmt.Println("table info:", cmd.Name) }
+func (c *Cli) handleTableInfo(cmd *TableInfo) {
+	if !c.requireClient() {
+		return
+	}
+
+	if cmd.Name == "" {
+		fmt.Println("usage: table name=<table_name>")
+		return
+	}
+
+	table, err := c.client.GetTable(c.ctx, cmd.Name)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	if table == nil {
+		fmt.Printf("table '%s' not found\n", cmd.Name)
+		return
+	}
+
+	fmt.Printf("Table: %s\n", table.Name)
+	fmt.Printf("  Rows:        %s\n", formatNumber(table.RowCount))
+	fmt.Printf("  Size:        %s\n", formatBytes(table.DataBytes))
+	fmt.Printf("  Min time:    %s\n", formatTimestamp(table.MinTimestamp))
+	fmt.Printf("  Max time:    %s\n", formatTimestamp(table.MaxTimestamp))
+	fmt.Printf("  Created:     %s\n", formatTimestamp(table.CreatedAt))
+	fmt.Printf("  Last update: %s\n", formatTimestamp(table.LastUpdated))
+}
 func (c *Cli) handleListTables(cmd *ListTables) {
 	if !c.requireClient() {
 		return
