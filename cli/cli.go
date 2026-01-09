@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/AR1011/slog"
 	"github.com/nonhumantrades/flowdb-go/client"
@@ -294,7 +295,44 @@ func (c *Cli) handleListTables(cmd *ListTables) {
 	}
 }
 
-func (c *Cli) handleStats(cmd *Stats) { fmt.Printf("stats: %+v\n", *cmd) }
+func (c *Cli) handleStats(cmd *Stats) {
+	if !c.requireClient() {
+		return
+	}
+
+	stats, err := c.client.GetStats(c.ctx)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	fmt.Println("FlowDB Statistics")
+	fmt.Println("─────────────────────────────────────")
+	fmt.Printf("Uptime:              %s\n", formatDuration(time.Duration(stats.UptimeSeconds)*time.Second))
+	fmt.Printf("Started:             %s\n", formatTimestamp(stats.StartedAt))
+	fmt.Println()
+	fmt.Println("Storage:")
+	fmt.Printf("  On disk:           %s\n", formatBytes(stats.OnDiskBytes))
+	fmt.Printf("  Bytes written:     %s\n", formatBytes(stats.BytesWritten))
+	fmt.Printf("  Bytes deleted:     %s\n", formatBytes(stats.BytesDeleted))
+	fmt.Println()
+	fmt.Println("Queries:")
+	fmt.Printf("  Datapoints queried: %s\n", formatNumber(stats.DatapointsQueried))
+	fmt.Printf("  Total requests:     %s\n", formatNumber(stats.TotalRequests))
+	fmt.Println()
+	fmt.Println("Request breakdown:")
+	fmt.Printf("  Insert:            %s\n", formatNumber(stats.InsertRequests))
+	fmt.Printf("  Batch insert:      %s\n", formatNumber(stats.BatchInsertRequests))
+	fmt.Printf("  Query:             %s\n", formatNumber(stats.QueryRequests))
+	fmt.Printf("  Stream query:      %s\n", formatNumber(stats.StreamQueryRequests))
+	fmt.Printf("  Delete:            %s\n", formatNumber(stats.DeleteRequests))
+	fmt.Printf("  Create table:      %s\n", formatNumber(stats.CreateTableRequests))
+	fmt.Printf("  Drop table:        %s\n", formatNumber(stats.DropTableRequests))
+	fmt.Printf("  Get table:         %s\n", formatNumber(stats.GetTableRequests))
+	fmt.Printf("  List tables:       %s\n", formatNumber(stats.ListTablesRequests))
+	fmt.Printf("  Backup to S3:      %s\n", formatNumber(stats.BackupToS3Requests))
+	fmt.Printf("  Restore from S3:   %s\n", formatNumber(stats.RestoreFromS3Requests))
+}
 func (c *Cli) handleHead(cmd *Head)   { fmt.Printf("head: %+v\n", *cmd) }
 func (c *Cli) handleQuery(cmd *Query) { fmt.Printf("query: %+v\n", *cmd) }
 func (c *Cli) handleDelete(cmd *Delete) {
