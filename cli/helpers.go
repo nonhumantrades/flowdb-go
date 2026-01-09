@@ -214,3 +214,32 @@ func formatNumber(n uint64) string {
 	}
 	return string(result)
 }
+
+func printProgressBar(current, total uint64, suffix string) {
+	width := 30
+	var percent float64
+	var filled int
+
+	if total > 0 {
+		percent = float64(current) / float64(total) * 100
+		filled = int(float64(width) * float64(current) / float64(total))
+	}
+
+	bar := strings.Repeat("=", filled)
+	if filled < width {
+		bar += ">"
+		bar += strings.Repeat(" ", width-filled-1)
+	}
+
+	fmt.Printf("\r[%s] %5.1f%% | %s / %s | %s",
+		bar,
+		percent,
+		formatBytes(current),
+		formatBytes(total),
+		suffix,
+	)
+}
+
+func clearProgressBar() {
+	fmt.Print("\r" + strings.Repeat(" ", 80) + "\r")
+}
