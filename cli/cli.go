@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/AR1011/slog"
@@ -457,7 +458,101 @@ func (c *Cli) handleQuery(cmd *Query) {
 	c.displayQueryResults(resp)
 }
 func (c *Cli) handleDelete(cmd *Delete) {
-	fmt.Printf("delete: %+v\n", *cmd)
+	if !c.requireClient() {
+		return
+	}
+
+	if cmd.Table == "" && cmd.Prefix == "" {
+		fmt.Println("error: either table= or prefix= is required")
+		return
+	}
+
+	if cmd.From == "" || cmd.To == "" {
+		fmt.Println("error: both from= and to= are required for delete (safety check)")
+		return
+	}
+
+	fromTime, err := parseTime(cmd.From)
+	if err != nil {
+		fmt.Printf("error: invalid from time: %v\n", err)
+		return
+	}
+	toTime, err := parseTime(cmd.To)
+	if err != nil {
+		fmt.Printf("error: invalid to time: %v\n", err)
+		return
+	}
+
+	// Step 1: Preview - query to get count
+	previewReq := &proto.QueryRequest{
+		TableName: cmd.Table,
+		Prefix:    cmd.Prefix,
+		Head:      true,
+		FilterOptions: &proto.FilterOptions{
+			From:  timestamppb.New(fromTime),
+			To:    timestamppb.New(toTime),
+			Limit: client.Int64(1), // Just need count, not actual rows
+		},
+	}
+
+	resp, err := c.client.Query(c.ctx, previewReq)
+	if err != nil {
+		fmt.Printf("error during preview: %v\n", err)
+		return
+	}
+
+	// Show preview
+	fmt.Println("Delete preview:")
+	if cmd.Table != "" {
+		fmt.Printf("  Table:  %s\n", cmd.Table)
+	}
+	if cmd.Prefix != "" {
+		fmt.Printf("  Prefix: %s\n", cmd.Prefix)
+	}
+	fmt.Printf("  Range:  %s → %s\n",
+		fromTime.UTC().Format("2006-01-02 15:04:05 UTC"),
+		toTime.UTC().Format("2006-01-02 15:04:05 UTC"),
+	)
+	fmt.Printf("  Rows:   %s\n", formatNumber(resp.Count))
+	fmt.Println()
+
+	if resp.Count == 0 {
+		fmt.Println("no rows to delete")
+		return
+	}
+
+	// Step 2: Confirm
+	confirm, err := c.readLine(fmt.Sprintf("This will permanently delete %s rows. Proceed? [y/N]: ", formatNumber(resp.Count)))
+	if err != nil {
+		fmt.Printf("aborted: %v\n", err)
+		return
+	}
+	confirm = strings.ToLower(strings.TrimSpace(confirm))
+	if confirm != "y" && confirm != "yes" {
+		fmt.Println("cancelled")
+		return
+	}
+
+	// Step 3: Execute delete
+	deleteReq := &proto.DeleteRequest{
+		TableName: cmd.Table,
+		Prefix:    cmd.Prefix,
+		FilterOptions: &proto.FilterOptions{
+			From: timestamppb.New(fromTime),
+			To:   timestamppb.New(toTime),
+		},
+	}
+
+	deleteResp, err := c.client.Delete(c.ctx, deleteReq)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Deleted %s rows in %dms\n",
+		formatNumber(deleteResp.DeletedRows),
+		deleteResp.Duration/1_000_000,
+	)
 }
 
 func (c *Cli) handleBackup(cmd *S3Backup)   { fmt.Printf("backup: %+v\n", *cmd) }
