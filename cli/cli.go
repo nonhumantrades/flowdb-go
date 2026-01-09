@@ -437,7 +437,25 @@ func (c *Cli) handleHead(cmd *Head) {
 
 	c.displayQueryResults(resp)
 }
-func (c *Cli) handleQuery(cmd *Query) { fmt.Printf("query: %+v\n", *cmd) }
+func (c *Cli) handleQuery(cmd *Query) {
+	if !c.requireClient() {
+		return
+	}
+
+	req, err := c.buildQueryRequest(cmd.Table, cmd.Prefix, cmd.From, cmd.To, cmd.Limit, false)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	resp, err := c.client.Query(c.ctx, req)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	c.displayQueryResults(resp)
+}
 func (c *Cli) handleDelete(cmd *Delete) {
 	fmt.Printf("delete: %+v\n", *cmd)
 }
