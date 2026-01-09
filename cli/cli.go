@@ -555,7 +555,70 @@ func (c *Cli) handleDelete(cmd *Delete) {
 	)
 }
 
-func (c *Cli) handleBackup(cmd *S3Backup)   { fmt.Printf("backup: %+v\n", *cmd) }
+func (c *Cli) handleBackup(cmd *S3Backup) {
+	if !c.requireClient() {
+		return
+	}
+
+	profile := c.pickS3Profile(cmd.Profile)
+	if profile == nil {
+		return
+	}
+
+	// Determine backup type
+	backupType := proto.BackupType_BACKUP_FULL
+	if strings.ToLower(cmd.Type) == "incr" || strings.ToLower(cmd.Type) == "incremental" {
+		backupType = proto.BackupType_BACKUP_INCREMENTAL
+		if cmd.FullKey == "" {
+			fmt.Println("error: full_key= is required for incremental backups")
+			return
+		}
+	}
+
+	req := &proto.BackupToS3Request{
+		S3Config: &proto.S3Config{
+			Bucket:    profile.Creds.Bucket,
+			Url:       profile.Creds.Url,
+			AccessKey: profile.Creds.AccessKey,
+			SecretKey: profile.Creds.SecretKey,
+			Region:    profile.Creds.Region,
+		},
+		Type:          backupType,
+		FullBackupKey: cmd.FullKey,
+	}
+
+	typeStr := "full"
+	if backupType == proto.BackupType_BACKUP_INCREMENTAL {
+		typeStr = "incremental"
+	}
+	fmt.Printf("Starting %s backup to s3://%s/...\n", typeStr, profile.Creds.Bucket)
+
+	params := client.NewBackupToS3Params().
+		WithRequest(req).
+		WithOnHeader(func(h *proto.BackupStarted) error {
+			fmt.Printf("Object key: %s\n\n", h.ObjectKey)
+			return nil
+		}).
+		WithOnProgress(func(p *proto.BackupProgress) error {
+			suffix := fmt.Sprintf("%d/%d files", p.FilesProcessed, p.TotalFiles)
+			printProgressBar(p.FilesProcessed, p.TotalFiles, suffix)
+			return nil
+		})
+
+	completed, err := c.client.BackupToS3(c.ctx, params)
+	clearProgressBar()
+
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+
+	fmt.Println("Backup complete!")
+	fmt.Printf("  Object key: %s\n", completed.ObjectKey)
+	fmt.Printf("  Size:       %s\n", formatBytes(completed.SizeBytes))
+	fmt.Printf("  Duration:   %s\n", formatDuration(time.Duration(completed.DurationMs)*time.Millisecond))
+	fmt.Printf("  Checksum:   %s\n", completed.Checksum)
+}
 func (c *Cli) handleRestore(cmd *S3Restore) { fmt.Printf("restore: %+v\n", *cmd) }
 
 func (c *Cli) handleHelp() {
