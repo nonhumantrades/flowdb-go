@@ -295,3 +295,11 @@ func (c *Cli) pickS3Profile(name string) *S3Profile {
 	}
 	return &c.state.S3Profiles[idx]
 }
+
+func (c *Cli) requireClient() bool {
+	if c.client == nil {
+		fmt.Println("not connected to server (use 'config set addr=<host:port>' to connect)")
+		return false
+	}
+	return true
+}
