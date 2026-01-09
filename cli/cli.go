@@ -382,6 +382,42 @@ func (c *Cli) buildQueryRequest(table, prefix, from, to string, limit int, isHea
 	return req, nil
 }
 
+func (c *Cli) displayQueryResults(resp *proto.QueryResponse) {
+	if resp.TableName != "" {
+		fmt.Printf("Table: %s\n", resp.TableName)
+	}
+	if resp.Prefix != "" {
+		fmt.Printf("Prefix: %s\n", resp.Prefix)
+	}
+	fmt.Println()
+
+	if len(resp.Rows) == 0 {
+		fmt.Println("no rows found")
+		return
+	}
+
+	fmt.Printf("%-8s %-26s %10s\n", "#", "TIMESTAMP", "SIZE")
+	for i, row := range resp.Rows {
+		fmt.Printf("%-8d %-26s %10s\n",
+			i+1,
+			formatTimestamp(row.Timestamp),
+			formatBytes(uint64(len(row.Data))),
+		)
+	}
+	fmt.Println()
+
+	if resp.TruncatedByLimit {
+		fmt.Printf("Showing %d rows (limit reached)\n", resp.Count)
+	} else {
+		fmt.Printf("Total: %d rows\n", resp.Count)
+	}
+	fmt.Printf("Query time: %dms\n", resp.Duration/1_000_000)
+	fmt.Printf("Total bytes: %s (compressed: %s)\n",
+		formatBytes(resp.UncompressedBytes),
+		formatBytes(resp.CompressedBytes),
+	)
+}
+
 func (c *Cli) handleHead(cmd *Head)   { fmt.Printf("head: %+v\n", *cmd) }
 func (c *Cli) handleQuery(cmd *Query) { fmt.Printf("query: %+v\n", *cmd) }
 func (c *Cli) handleDelete(cmd *Delete) {
