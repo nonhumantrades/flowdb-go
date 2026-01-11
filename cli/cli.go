@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,6 +14,7 @@ import (
 	"github.com/nonhumantrades/flowdb-go/client"
 	"github.com/nonhumantrades/flowdb-go/proto"
 	"github.com/nonhumantrades/flowdb-go/types"
+	"github.com/peterh/liner"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -55,7 +56,7 @@ type storedState struct {
 type Cli struct {
 	opts   Opts
 	parser *Parser
-	reader *bufio.Reader
+	liner  *liner.State
 	client *client.Client
 
 	ctx    context.Context
@@ -73,13 +74,19 @@ func New(opts *Opts) *Cli {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	line := liner.NewLiner()
+	line.SetCtrlCAborts(true)
+
 	c := &Cli{
 		opts:   *opts,
-		reader: bufio.NewReader(os.Stdin),
+		liner:  line,
 		parser: NewParser(),
 		ctx:    ctx,
 		cancel: cancel,
 	}
+
+	// Load command history
+	c.loadHistory()
 
 	if err := c.init(); err != nil {
 		slog.Warn("cli.init: error during init()", "error", err)
@@ -96,6 +103,25 @@ func New(opts *Opts) *Cli {
 
 	c.registerCommands()
 	return c
+}
+
+func (c *Cli) historyPath() string {
+	homeDir, _ := os.UserHomeDir()
+	return filepath.Join(homeDir, ".flowdb_history")
+}
+
+func (c *Cli) loadHistory() {
+	if f, err := os.Open(c.historyPath()); err == nil {
+		c.liner.ReadHistory(f)
+		f.Close()
+	}
+}
+
+func (c *Cli) saveHistory() {
+	if f, err := os.Create(c.historyPath()); err == nil {
+		c.liner.WriteHistory(f)
+		f.Close()
+	}
 }
 
 func (c *Cli) init() error {
@@ -163,21 +189,33 @@ func (c *Cli) registerCommands() {
 
 func (c *Cli) Loop() {
 	defer func() {
+		c.saveHistory()
+		c.liner.Close()
 		if c.client != nil {
 			_ = c.client.Close()
 		}
 	}()
 
 	for {
-		line, err := c.readLine("flowdb> ")
+		input, err := c.liner.Prompt("flowdb> ")
 		if err != nil {
+			if err == liner.ErrPromptAborted {
+				// Ctrl+C pressed - just go to new line
+				continue
+			}
+			// EOF (Ctrl+D) or other error
 			fmt.Println()
 			return
 		}
 
+		line := strings.TrimSpace(input)
 		if line == "" {
 			continue
 		}
+
+		// Add to history
+		c.liner.AppendHistory(line)
+
 		if line == "exit" || line == "quit" {
 			return
 		}
@@ -483,7 +521,10 @@ func (c *Cli) handleDelete(cmd *Delete) {
 		return
 	}
 
-	// Step 1: Preview - query to get count
+	// Use high limit to get accurate preview count (default is 750)
+	const previewLimit = 1_000_000
+
+	// Step 1: Preview - query to get count and size
 	previewReq := &proto.QueryRequest{
 		TableName: cmd.Table,
 		Prefix:    cmd.Prefix,
@@ -491,7 +532,7 @@ func (c *Cli) handleDelete(cmd *Delete) {
 		FilterOptions: &proto.FilterOptions{
 			From:  timestamppb.New(fromTime),
 			To:    timestamppb.New(toTime),
-			Limit: client.Int64(1), // Just need count, not actual rows
+			Limit: client.Int64(previewLimit),
 		},
 	}
 
@@ -513,7 +554,12 @@ func (c *Cli) handleDelete(cmd *Delete) {
 		fromTime.UTC().Format("2006-01-02 15:04:05 UTC"),
 		toTime.UTC().Format("2006-01-02 15:04:05 UTC"),
 	)
-	fmt.Printf("  Rows:   %s\n", formatNumber(resp.Count))
+	if resp.TruncatedByLimit {
+		fmt.Printf("  Rows:   %s+ (exceeded preview limit)\n", formatNumber(resp.Count))
+	} else {
+		fmt.Printf("  Rows:   %s\n", formatNumber(resp.Count))
+	}
+	fmt.Printf("  Size:   %s\n", formatBytes(resp.UncompressedBytes))
 	fmt.Println()
 
 	if resp.Count == 0 {
@@ -522,7 +568,8 @@ func (c *Cli) handleDelete(cmd *Delete) {
 	}
 
 	// Step 2: Confirm
-	confirm, err := c.readLine(fmt.Sprintf("This will permanently delete %s rows. Proceed? [y/N]: ", formatNumber(resp.Count)))
+	confirm, err := c.readLine(fmt.Sprintf("This will permanently delete %s rows (%s). Proceed? [y/N]: ",
+		formatNumber(resp.Count), formatBytes(resp.UncompressedBytes)))
 	if err != nil {
 		fmt.Printf("aborted: %v\n", err)
 		return
@@ -533,13 +580,14 @@ func (c *Cli) handleDelete(cmd *Delete) {
 		return
 	}
 
-	// Step 3: Execute delete
+	// Step 3: Execute delete with high limit to avoid default 750 row limit
 	deleteReq := &proto.DeleteRequest{
 		TableName: cmd.Table,
 		Prefix:    cmd.Prefix,
 		FilterOptions: &proto.FilterOptions{
-			From: timestamppb.New(fromTime),
-			To:   timestamppb.New(toTime),
+			From:  timestamppb.New(fromTime),
+			To:    timestamppb.New(toTime),
+			Limit: client.Int64(-1), // -1 = no limit
 		},
 	}
 

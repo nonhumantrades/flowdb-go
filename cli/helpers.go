@@ -20,8 +20,7 @@ func getCredentialsPath() string {
 }
 
 func (c *Cli) readLine(prompt string) (string, error) {
-	fmt.Print(prompt)
-	line, err := c.reader.ReadString('\n')
+	line, err := c.liner.Prompt(prompt)
 	if err != nil {
 		return "", err
 	}

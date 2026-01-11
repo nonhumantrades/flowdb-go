@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/peterh/liner v1.2.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect
 	golang.org/x/net v0.42.0 // indirect
