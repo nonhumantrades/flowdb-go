@@ -201,9 +201,12 @@ message BackupStarted {
 }
 
 message BackupProgress {
-    uint64 bytes_written = 1;
+    string phase = 1;            // "compressing", "uploading"
     uint64 files_processed = 2;
     uint64 total_files = 3;
+    uint64 raw_bytes = 4;        // Uncompressed data size
+    uint64 compressed_bytes = 5; // Compressed size (known after compression)
+    uint64 bytes_uploaded = 6;   // Bytes uploaded to S3 so far
 }
 
 message BackupCompleted {

@@ -507,6 +507,9 @@ func (c *Client) BackupToS3(ctx context.Context, p *BackupToS3Params) (*proto.Ba
 		chunk, err := stream.Recv()
 		if err != nil {
 			if err == io.EOF {
+				if ft == nil {
+					return nil, errors.New("backup stream closed without completion message")
+				}
 				return ft, nil
 			}
 			if isConnectionError(err) {
@@ -599,6 +602,9 @@ func (c *Client) RestoreFromS3(ctx context.Context, p *RestoreFromS3Params) (*pr
 		chunk, err := stream.Recv()
 		if err != nil {
 			if err == io.EOF {
+				if ft == nil {
+					return nil, errors.New("restore stream closed without completion message")
+				}
 				return ft, nil
 			}
 			if isConnectionError(err) {

@@ -683,9 +683,12 @@ func (m *BackupProgress) CloneVT() *BackupProgress {
 		return (*BackupProgress)(nil)
 	}
 	r := new(BackupProgress)
-	r.BytesWritten = m.BytesWritten
+	r.Phase = m.Phase
 	r.FilesProcessed = m.FilesProcessed
 	r.TotalFiles = m.TotalFiles
+	r.RawBytes = m.RawBytes
+	r.CompressedBytes = m.CompressedBytes
+	r.BytesUploaded = m.BytesUploaded
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1832,13 +1835,22 @@ func (this *BackupProgress) EqualVT(that *BackupProgress) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.BytesWritten != that.BytesWritten {
+	if this.Phase != that.Phase {
 		return false
 	}
 	if this.FilesProcessed != that.FilesProcessed {
 		return false
 	}
 	if this.TotalFiles != that.TotalFiles {
+		return false
+	}
+	if this.RawBytes != that.RawBytes {
+		return false
+	}
+	if this.CompressedBytes != that.CompressedBytes {
+		return false
+	}
+	if this.BytesUploaded != that.BytesUploaded {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4562,6 +4574,21 @@ func (m *BackupProgress) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.BytesUploaded != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BytesUploaded))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.CompressedBytes != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CompressedBytes))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.RawBytes != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RawBytes))
+		i--
+		dAtA[i] = 0x20
+	}
 	if m.TotalFiles != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalFiles))
 		i--
@@ -4572,10 +4599,12 @@ func (m *BackupProgress) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.BytesWritten != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BytesWritten))
+	if len(m.Phase) > 0 {
+		i -= len(m.Phase)
+		copy(dAtA[i:], m.Phase)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Phase)))
 		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -6876,6 +6905,21 @@ func (m *BackupProgress) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.BytesUploaded != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BytesUploaded))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.CompressedBytes != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CompressedBytes))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.RawBytes != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RawBytes))
+		i--
+		dAtA[i] = 0x20
+	}
 	if m.TotalFiles != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.TotalFiles))
 		i--
@@ -6886,10 +6930,12 @@ func (m *BackupProgress) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) 
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.BytesWritten != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BytesWritten))
+	if len(m.Phase) > 0 {
+		i -= len(m.Phase)
+		copy(dAtA[i:], m.Phase)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Phase)))
 		i--
-		dAtA[i] = 0x8
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -8180,14 +8226,24 @@ func (m *BackupProgress) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.BytesWritten != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.BytesWritten))
+	l = len(m.Phase)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.FilesProcessed != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.FilesProcessed))
 	}
 	if m.TotalFiles != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.TotalFiles))
+	}
+	if m.RawBytes != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.RawBytes))
+	}
+	if m.CompressedBytes != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.CompressedBytes))
+	}
+	if m.BytesUploaded != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.BytesUploaded))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -12299,10 +12355,10 @@ func (m *BackupProgress) UnmarshalVT(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BytesWritten", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Phase", wireType)
 			}
-			m.BytesWritten = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -12312,11 +12368,24 @@ func (m *BackupProgress) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.BytesWritten |= uint64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Phase = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FilesProcessed", wireType)
@@ -12351,6 +12420,63 @@ func (m *BackupProgress) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.TotalFiles |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RawBytes", wireType)
+			}
+			m.RawBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RawBytes |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompressedBytes", wireType)
+			}
+			m.CompressedBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CompressedBytes |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BytesUploaded", wireType)
+			}
+			m.BytesUploaded = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BytesUploaded |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -17721,10 +17847,10 @@ func (m *BackupProgress) UnmarshalVTUnsafe(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BytesWritten", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Phase", wireType)
 			}
-			m.BytesWritten = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -17734,11 +17860,28 @@ func (m *BackupProgress) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.BytesWritten |= uint64(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Phase = stringValue
+			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field FilesProcessed", wireType)
@@ -17773,6 +17916,63 @@ func (m *BackupProgress) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.TotalFiles |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RawBytes", wireType)
+			}
+			m.RawBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RawBytes |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CompressedBytes", wireType)
+			}
+			m.CompressedBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CompressedBytes |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BytesUploaded", wireType)
+			}
+			m.BytesUploaded = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BytesUploaded |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
