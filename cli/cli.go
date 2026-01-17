@@ -641,6 +641,9 @@ func (c *Cli) handleBackup(cmd *S3Backup) {
 	}
 	fmt.Printf("Starting %s backup to s3://%s/...\n", typeStr, profile.Creds.Bucket)
 
+	var rawBytes uint64
+	var compressedBytes uint64
+
 	params := client.NewBackupToS3Params().
 		WithRequest(req).
 		WithOnHeader(func(h *proto.BackupStarted) error {
@@ -648,8 +651,18 @@ func (c *Cli) handleBackup(cmd *S3Backup) {
 			return nil
 		}).
 		WithOnProgress(func(p *proto.BackupProgress) error {
-			suffix := fmt.Sprintf("%d/%d files", p.FilesProcessed, p.TotalFiles)
-			printProgressBar(p.FilesProcessed, p.TotalFiles, suffix)
+			rawBytes = p.RawBytes
+			if p.CompressedBytes > 0 {
+				compressedBytes = p.CompressedBytes
+			}
+
+			if p.Phase == "compressing" {
+				suffix := fmt.Sprintf("%d/%d files | raw: %s", p.FilesProcessed, p.TotalFiles, formatBytes(p.RawBytes))
+				printProgressBar(p.FilesProcessed, p.TotalFiles, suffix)
+			} else if p.Phase == "uploading" {
+				suffix := fmt.Sprintf("raw: %s → compressed: %s", formatBytes(rawBytes), formatBytes(compressedBytes))
+				printProgressBar(p.BytesUploaded, p.CompressedBytes, suffix)
+			}
 			return nil
 		})
 
