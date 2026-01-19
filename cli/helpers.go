@@ -184,6 +184,11 @@ func formatDuration(d time.Duration) string {
 	return fmt.Sprintf("%dd %dh", days, h)
 }
 
+// formatDurationMs formats milliseconds to human-readable duration.
+func formatDurationMs(ms uint64) string {
+	return formatDuration(time.Duration(ms) * time.Millisecond)
+}
+
 func formatTimestamp(ts *timestamppb.Timestamp) string {
 	if ts == nil {
 		return "-"
