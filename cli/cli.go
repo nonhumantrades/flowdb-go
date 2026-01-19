@@ -641,43 +641,48 @@ func (c *Cli) handleBackup(cmd *S3Backup) {
 	}
 	fmt.Printf("Starting %s backup to s3://%s/...\n", typeStr, profile.Creds.Bucket)
 
-	var rawBytes uint64
-	var compressedBytes uint64
+	var firstProgress bool
+	var lastRawBytes, lastCompressedBytes uint64
 
 	params := client.NewBackupToS3Params().
 		WithRequest(req).
 		WithOnHeader(func(h *proto.BackupStarted) error {
 			fmt.Printf("Object key: %s\n\n", h.ObjectKey)
+			// Print 3 empty lines for progress area
+			fmt.Println()
+			fmt.Println()
+			fmt.Println()
 			return nil
 		}).
 		WithOnProgress(func(p *proto.BackupProgress) error {
-			rawBytes = p.RawBytes
-			if p.CompressedBytes > 0 {
-				compressedBytes = p.CompressedBytes
-			}
-
-			if p.Phase == "compressing" {
-				suffix := fmt.Sprintf("%d/%d files | raw: %s", p.FilesProcessed, p.TotalFiles, formatBytes(p.RawBytes))
-				printProgressBar(p.FilesProcessed, p.TotalFiles, suffix)
-			} else if p.Phase == "uploading" {
-				suffix := fmt.Sprintf("raw: %s → compressed: %s", formatBytes(rawBytes), formatBytes(compressedBytes))
-				printProgressBar(p.BytesUploaded, p.CompressedBytes, suffix)
-			}
+			printBackupDualProgress(p, firstProgress)
+			firstProgress = true
+			lastRawBytes = p.RawBytes
+			lastCompressedBytes = p.CompressedBytes
 			return nil
 		})
 
 	completed, err := c.client.BackupToS3(c.ctx, params)
-	clearProgressBar()
+	if firstProgress {
+		clearBackupProgress()
+	}
 
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		return
 	}
 
+	// Final summary
 	fmt.Println("Backup complete!")
 	fmt.Printf("  Object key: %s\n", completed.ObjectKey)
 	fmt.Printf("  Size:       %s\n", formatBytes(completed.SizeBytes))
 	fmt.Printf("  Duration:   %s\n", formatDuration(time.Duration(completed.DurationMs)*time.Millisecond))
+	if lastCompressedBytes > 0 && lastRawBytes > 0 {
+		fmt.Printf("  Ratio:      %.1fx (%s → %s)\n",
+			float64(lastRawBytes)/float64(lastCompressedBytes),
+			formatBytes(lastRawBytes),
+			formatBytes(lastCompressedBytes))
+	}
 	fmt.Printf("  Checksum:   %s\n", completed.Checksum)
 }
 func (c *Cli) handleRestore(cmd *S3Restore) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nonhumantrades/flowdb-go/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -246,6 +247,66 @@ func printProgressBar(current, total uint64, suffix string) {
 
 func clearProgressBar() {
 	fmt.Print("\r" + strings.Repeat(" ", 80) + "\r")
+}
+
+// printBackupDualProgress prints dual progress bars for backup.
+// Call with moveCursor=true after first print to overwrite previous lines.
+func printBackupDualProgress(p *proto.BackupProgress, moveCursor bool) {
+	// Move cursor up 3 lines and clear if not first print
+	if moveCursor {
+		fmt.Print("\033[3A\033[J")
+	}
+
+	// Line 1: Compression progress
+	compPercent := float64(0)
+	if p.TotalFiles > 0 {
+		compPercent = float64(p.FilesProcessed) / float64(p.TotalFiles) * 100
+	}
+	compFilled := int(30 * compPercent / 100)
+	compBar := strings.Repeat("=", compFilled)
+	if compFilled < 30 {
+		compBar += ">"
+		compBar += strings.Repeat(" ", 30-compFilled-1)
+	}
+
+	ratio := ""
+	if p.CompressedBytes > 0 && p.RawBytes > 0 {
+		ratio = fmt.Sprintf(" | ratio: %.1fx", float64(p.RawBytes)/float64(p.CompressedBytes))
+	}
+	fmt.Printf("Compress: [%s] %5.1f%% | %d/%d files | %s raw%s\n",
+		compBar, compPercent, p.FilesProcessed, p.TotalFiles, formatBytes(p.RawBytes), ratio)
+
+	// Line 2: Upload progress
+	upPercent := float64(0)
+	if p.CompressedBytes > 0 {
+		upPercent = float64(p.BytesUploaded) / float64(p.CompressedBytes) * 100
+	}
+	upFilled := int(30 * upPercent / 100)
+	upBar := strings.Repeat("=", upFilled)
+	if upFilled < 30 {
+		upBar += ">"
+		upBar += strings.Repeat(" ", 30-upFilled-1)
+	}
+
+	rate := ""
+	if p.UploadRateBps > 0 {
+		rate = fmt.Sprintf(" | %s/s", formatBytes(p.UploadRateBps))
+	}
+	fmt.Printf("Upload:   [%s] %5.1f%% | %s / %s%s\n",
+		upBar, upPercent, formatBytes(p.BytesUploaded), formatBytes(p.CompressedBytes), rate)
+
+	// Line 3: Timing
+	elapsed := formatDurationMs(p.ElapsedMs)
+	eta := "calculating..."
+	if p.EtaMs > 0 {
+		eta = formatDurationMs(p.EtaMs)
+	}
+	fmt.Printf("Elapsed: %s | ETA: %s\n", elapsed, eta)
+}
+
+// clearBackupProgress clears the 3-line backup progress display.
+func clearBackupProgress() {
+	fmt.Print("\033[3A\033[J")
 }
 
 // pickS3Profile returns the S3 profile by name, or prompts user to select one interactively.
