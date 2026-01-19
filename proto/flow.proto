@@ -207,6 +207,9 @@ message BackupProgress {
     uint64 raw_bytes = 4;        // Uncompressed data size
     uint64 compressed_bytes = 5; // Compressed size (known after compression)
     uint64 bytes_uploaded = 6;   // Bytes uploaded to S3 so far
+    uint64 elapsed_ms = 7;       // Time since backup started
+    uint64 eta_ms = 8;           // Estimated time remaining
+    uint64 upload_rate_bps = 9;  // Upload bytes per second
 }
 
 message BackupCompleted {

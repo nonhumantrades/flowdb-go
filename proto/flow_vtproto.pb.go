@@ -689,6 +689,9 @@ func (m *BackupProgress) CloneVT() *BackupProgress {
 	r.RawBytes = m.RawBytes
 	r.CompressedBytes = m.CompressedBytes
 	r.BytesUploaded = m.BytesUploaded
+	r.ElapsedMs = m.ElapsedMs
+	r.EtaMs = m.EtaMs
+	r.UploadRateBps = m.UploadRateBps
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1851,6 +1854,15 @@ func (this *BackupProgress) EqualVT(that *BackupProgress) bool {
 		return false
 	}
 	if this.BytesUploaded != that.BytesUploaded {
+		return false
+	}
+	if this.ElapsedMs != that.ElapsedMs {
+		return false
+	}
+	if this.EtaMs != that.EtaMs {
+		return false
+	}
+	if this.UploadRateBps != that.UploadRateBps {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4574,6 +4586,21 @@ func (m *BackupProgress) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.UploadRateBps != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UploadRateBps))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.EtaMs != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.EtaMs))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.ElapsedMs != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ElapsedMs))
+		i--
+		dAtA[i] = 0x38
+	}
 	if m.BytesUploaded != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BytesUploaded))
 		i--
@@ -6905,6 +6932,21 @@ func (m *BackupProgress) MarshalToSizedBufferVTStrict(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.UploadRateBps != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.UploadRateBps))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.EtaMs != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.EtaMs))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.ElapsedMs != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ElapsedMs))
+		i--
+		dAtA[i] = 0x38
+	}
 	if m.BytesUploaded != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.BytesUploaded))
 		i--
@@ -8244,6 +8286,15 @@ func (m *BackupProgress) SizeVT() (n int) {
 	}
 	if m.BytesUploaded != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.BytesUploaded))
+	}
+	if m.ElapsedMs != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ElapsedMs))
+	}
+	if m.EtaMs != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.EtaMs))
+	}
+	if m.UploadRateBps != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.UploadRateBps))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -12477,6 +12528,63 @@ func (m *BackupProgress) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.BytesUploaded |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ElapsedMs", wireType)
+			}
+			m.ElapsedMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ElapsedMs |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EtaMs", wireType)
+			}
+			m.EtaMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EtaMs |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UploadRateBps", wireType)
+			}
+			m.UploadRateBps = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UploadRateBps |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -17973,6 +18081,63 @@ func (m *BackupProgress) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.BytesUploaded |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ElapsedMs", wireType)
+			}
+			m.ElapsedMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ElapsedMs |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EtaMs", wireType)
+			}
+			m.EtaMs = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EtaMs |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UploadRateBps", wireType)
+			}
+			m.UploadRateBps = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UploadRateBps |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
