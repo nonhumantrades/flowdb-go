@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"path/filepath"
 	"regexp"
@@ -302,6 +303,9 @@ func printBackupDualProgress(p *proto.BackupProgress, moveCursor bool) {
 		eta = formatDurationMs(p.EtaMs)
 	}
 	fmt.Printf("Elapsed: %s | ETA: %s\n", elapsed, eta)
+
+	// Flush stdout for smoother progress display
+	os.Stdout.Sync()
 }
 
 // clearBackupProgress clears the 3-line backup progress display.
