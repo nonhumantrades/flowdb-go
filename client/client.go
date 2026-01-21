@@ -356,6 +356,7 @@ func (c *Client) StreamQuery(ctx context.Context, params *StreamQueryParams) (*p
 	if result.stream == nil {
 		return nil, lastErr
 	}
+	defer func() { _ = result.stream.Close() }()
 
 	resp := &proto.QueryResponse{}
 
