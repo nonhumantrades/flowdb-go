@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 message Row {
     google.protobuf.Timestamp timestamp = 1;
     bytes data                          = 2;
+    string prefix                       = 3;
 }
 
 enum CompressionMethod {
