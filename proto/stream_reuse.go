@@ -76,6 +76,13 @@ func (m *ReusableStreamQueryChunk) UnmarshalVT(dAtA []byte) error {
 		}
 		dAtA = dAtA[n:]
 
+		// Assumes at most one oneof member and at most one batch field per
+		// wire message, which is what the flowdb server always emits. On
+		// nonconforming input this diverges from the generated decoder:
+		// generated oneof handling is last-field-wins and repeated batch
+		// fields merge their rows, whereas here all members are surfaced
+		// (caller dispatch prefers Header) and a repeated batch field
+		// overwrites the previous one.
 		switch num {
 		case 1: // header: once per stream, a fresh alloc is fine
 			h := &StreamQueryHeader{}

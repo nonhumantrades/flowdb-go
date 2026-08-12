@@ -319,6 +319,18 @@ func (p *StreamQueryParams) WithRequest(req *proto.QueryRequest) *StreamQueryPar
 // callback invocation — they are overwritten by the next received batch.
 // Callers that retain rows must copy them (e.g. row.CloneVT()).
 // Default (false) keeps the current behavior: callbacks own the rows.
+//
+// FIELD PRESENCE: reused rows keep their storage, so a row whose wire
+// message omits timestamp or data is delivered with a non-nil zero-valued
+// Timestamp and a non-nil empty Data slice, where the default path yields
+// nil for both. Callers that nil-check Timestamp/Data should check
+// Timestamp.AsTime().IsZero() / len(Data) == 0 instead when reuse is on.
+//
+// MEMORY: each in-flight reuse stream retains up to
+// rows_per_chunk x max_row_size of pooled Row storage for its duration.
+// Many concurrent short queries over large rows raise peak RSS
+// accordingly; few long-lived streams (the intended use) amortize the
+// pool to zero allocations per chunk.
 func (p *StreamQueryParams) WithRowReuse(reuse bool) *StreamQueryParams {
 	p.reuseRows = reuse
 	return p
@@ -389,6 +401,9 @@ func (c *Client) StreamQuery(ctx context.Context, params *StreamQueryParams) (*p
 				return nil, recvErr
 			}
 
+			// A conforming server sends exactly one of Header/Batch/Footer
+			// per message; this priority order only matters on malformed
+			// input (see ReusableStreamQueryChunk.UnmarshalVT).
 			switch {
 			case chunk.Header != nil:
 				resp.TableName = chunk.Header.TableName
