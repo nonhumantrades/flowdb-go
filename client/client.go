@@ -281,9 +281,10 @@ func (c *Client) Query(ctx context.Context, req *proto.QueryRequest) (*proto.Que
 }
 
 type StreamQueryParams struct {
-	req     *proto.QueryRequest
-	onRow   func(*proto.Row) error
-	onBatch func(index uint32, rows []*proto.Row) error
+	req       *proto.QueryRequest
+	onRow     func(*proto.Row) error
+	onBatch   func(index uint32, rows []*proto.Row) error
+	reuseRows bool
 }
 
 func NewStreamQueryParams() *StreamQueryParams {
@@ -306,6 +307,20 @@ func (p *StreamQueryParams) WithOnBatch(onBatch func(index uint32, rows []*proto
 
 func (p *StreamQueryParams) WithRequest(req *proto.QueryRequest) *StreamQueryParams {
 	p.req = req
+	return p
+}
+
+// WithRowReuse enables zero-allocation row decoding for this stream: the
+// client recycles Row objects (and their Data/Timestamp storage) and the
+// rows slice across batches instead of allocating fresh ones per chunk.
+//
+// OWNERSHIP CHANGE: with reuse enabled, rows passed to the OnRow/OnBatch
+// callbacks (including Row.Data) are only valid for the duration of that
+// callback invocation — they are overwritten by the next received batch.
+// Callers that retain rows must copy them (e.g. row.CloneVT()).
+// Default (false) keeps the current behavior: callbacks own the rows.
+func (p *StreamQueryParams) WithRowReuse(reuse bool) *StreamQueryParams {
+	p.reuseRows = reuse
 	return p
 }
 
@@ -359,6 +374,44 @@ func (c *Client) StreamQuery(ctx context.Context, params *StreamQueryParams) (*p
 	defer func() { _ = result.stream.Close() }()
 
 	resp := &proto.QueryResponse{}
+
+	if params.reuseRows {
+		var chunk proto.ReusableStreamQueryChunk
+		for {
+			recvErr := chunk.RecvFrom(result.stream)
+			if recvErr != nil {
+				if recvErr == io.EOF {
+					return resp, nil
+				}
+				if isConnectionError(recvErr) {
+					result.conn.markBroken()
+				}
+				return nil, recvErr
+			}
+
+			switch {
+			case chunk.Header != nil:
+				resp.TableName = chunk.Header.TableName
+				resp.Prefix = chunk.Header.Prefix
+			case chunk.Batch != nil:
+				for _, r := range chunk.Batch.Rows {
+					if err := params.onRow(r); err != nil {
+						return nil, err
+					}
+				}
+				if err := params.onBatch(chunk.Batch.Index, chunk.Batch.Rows); err != nil {
+					return nil, err
+				}
+			case chunk.Footer != nil:
+				f := chunk.Footer
+				resp.Duration = f.Duration
+				resp.Count = f.Count
+				resp.CompressedBytes = f.CompressedBytes
+				resp.UncompressedBytes = f.UncompressedBytes
+				resp.TruncatedByLimit = f.TruncatedByLimit
+			}
+		}
+	}
 
 	for {
 		chunk, recvErr := result.stream.Recv()
